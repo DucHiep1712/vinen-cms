@@ -128,7 +128,7 @@ const ProductsForm: React.FC = () => {
   }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
     setForm((prev: typeof form) => ({
       ...prev,
       [name]: value,

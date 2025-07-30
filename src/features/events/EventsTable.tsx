@@ -23,7 +23,6 @@ import {
   PaginationLink,
   PaginationPrevious,
   PaginationNext,
-  PaginationEllipsis,
 } from '@/components/ui/pagination';
 import { Input } from '@/components/ui/input';
 
@@ -132,7 +131,7 @@ const EventsTable: React.FC = () => {
     setLoading(true);
     getEvents()
       .then(data => setEvents(data || []))
-      .catch(err => setError('Không thể tải danh sách sự kiện.'))
+                      .catch(() => setError('Không thể tải danh sách sự kiện.'))
       .finally(() => setLoading(false));
   };
 
@@ -150,9 +149,9 @@ const EventsTable: React.FC = () => {
       await deleteEvent(id);
       toast.success('Đã xóa sự kiện thành công!');
       fetchEvents();
-    } catch (err) {
-      toast.error('Xóa sự kiện thất bại.');
-    } finally {
+                    } catch {
+                  toast.error('Xóa sự kiện thất bại.');
+                } finally {
       setDeletingId(null);
     }
   };

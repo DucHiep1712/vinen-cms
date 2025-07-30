@@ -1,11 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import Dashboard from './pages/Dashboard';
 import Auth from './pages/Auth';
 import EventsTable from './features/events/EventsTable';
 import EventForm from './features/events/EventForm';
 import './App.css'
 import Navbar from './components/ui/Navbar';
-import React from 'react';
 import NewsIndexPage from './pages/news/index';
 import EventEditPage from './pages/events/[id]/edit';
 import NewsCreatePage from './pages/news/new';

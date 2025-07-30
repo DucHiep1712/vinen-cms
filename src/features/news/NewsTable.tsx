@@ -24,7 +24,6 @@ import {
   PaginationLink,
   PaginationPrevious,
   PaginationNext,
-  PaginationEllipsis,
 } from '@/components/ui/pagination';
 import { Input } from '@/components/ui/input';
 

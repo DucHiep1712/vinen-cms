@@ -10,7 +10,6 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '../../components/ui/too
 import { Copy, ArrowLeft } from 'lucide-react';
 import { isEqual } from 'lodash';
 import { Button as ShadcnButton } from '../../components/ui/button';
-import { Checkbox } from '../../components/ui/checkbox';
 import { Switch } from '../../components/ui/switch';
 import { uploadFileFromInput } from '../../services/fileApi';
 
