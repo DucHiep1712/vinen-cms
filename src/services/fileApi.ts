@@ -239,9 +239,20 @@ async function saveToCloudFallback(filename: string, content: ArrayBuffer, stabl
   }
 }
 
-// Main API functions - export the CORS-friendly version
+// Import proxy functions
+import { uploadFileWithProxy, uploadBlobWithProxy } from './proxyFileApi';
+
+// Main API functions - use proxy by default to avoid CORS issues
 export async function saveToCloud(filename: string, content: ArrayBuffer, stable: boolean = false): Promise<string | null> {
-  return uploadWithCORSHandling(filename, content, stable);
+  try {
+    // Convert ArrayBuffer to Blob
+    const blob = new Blob([content], { type: getMimeType(filename).type });
+    return await uploadBlobWithProxy(blob, filename, stable);
+  } catch (error) {
+    console.error('Proxy upload failed, falling back to direct upload:', error);
+    // Fallback to direct upload if proxy fails
+    return uploadWithCORSHandling(filename, content, stable);
+  }
 }
 
 export async function downloadToCloud(url: string, stable: boolean = false): Promise<string | null> {
@@ -345,8 +356,8 @@ export async function concurrentDownloadToCloud(urls: string[]): Promise<(string
 // Helper function to upload file from input
 export async function uploadFileFromInput(file: File, stable: boolean = false): Promise<string | null> {
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    return await saveToCloud(file.name, arrayBuffer, stable);
+    // Use proxy upload for files
+    return await uploadFileWithProxy(file, stable);
   } catch (error) {
     console.error('Upload file failed:', error);
     return null;
@@ -369,8 +380,8 @@ export async function uploadBlobToCloud(blob: Blob, filename: string, stable: bo
   if (blobUploadCache.has(hash)) {
     return blobUploadCache.get(hash)!;
   }
-  const arrayBuffer = await blob.arrayBuffer();
-  const url = await saveToCloud(filename, arrayBuffer, stable);
+  // Use proxy upload for blobs
+  const url = await uploadBlobWithProxy(blob, filename, stable);
   if (url) {
     blobUploadCache.set(hash, url);
   }
