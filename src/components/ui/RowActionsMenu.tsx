@@ -52,7 +52,7 @@ export default function RowActionsMenu({ onEdit, onDelete }: RowActionsMenuProps
     <div className="relative flex items-center justify-end">
       <button
         ref={buttonRef}
-        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted-foreground/10 transition-colors"
         onClick={() => setOpen((v) => !v)}
         aria-label="Hành động"
         tabIndex={0}

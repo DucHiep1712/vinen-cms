@@ -12,7 +12,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '../../components/ui/too
 import { Copy } from 'lucide-react';
 import { ArrowLeft } from 'lucide-react';
 import { isEqual } from 'lodash';
-import { uploadFileFromInput } from '../../services/fileApi';
+import { uploadFileFromInput, uploadBlobToCloud } from '../../services/fileApi';
 
 const defaultEvent = {
   title: '',
@@ -337,15 +337,25 @@ const EventForm: React.FC = () => {
                 content_style:
                   'body { font-family: TikTok Sans, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif; font-size:16px }',
                 language: 'vi',
-                images_upload_handler: (
+                images_upload_handler: async (
                   blobInfo: any,
                   success: (url: string) => void,
                   failure: (err: string) => void
                 ) => {
-                  const reader = new FileReader();
-                  reader.onload = () => success(reader.result as string);
-                  reader.onerror = () => failure('Không thể tải ảnh');
-                  reader.readAsDataURL(blobInfo.blob());
+                  try {
+                    const blob = blobInfo.blob();
+                    const filename = blobInfo.filename() || `editor-image-${Date.now()}.png`;
+                    const url = await uploadBlobToCloud(blob, filename, false);
+                    if (url) {
+                      success(url);
+                    } else {
+                      toast.error('Không thể tải ảnh lên cloud storage.');
+                      failure('Không thể tải ảnh lên cloud storage.');
+                    }
+                  } catch (err) {
+                    toast.error('Lỗi khi tải ảnh lên cloud storage.');
+                    failure('Lỗi khi tải ảnh lên cloud storage.');
+                  }
                 },
               }}
               onEditorChange={content => setForm((prev: typeof form) => ({ ...prev, description: content }))}

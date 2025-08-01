@@ -1,92 +1,210 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-
-const phoneRegex = /^\+?\d{10,15}$/;
-const MOCK_OTP = '123456';
+import { Label } from '../components/ui/label';
+import { loginUser, registerUser, validateUsername, validatePassword } from '../services/authApi';
+import { useAuth } from '../contexts/AuthContext';
+import toast, { Toaster } from 'react-hot-toast';
+import { Lock, User } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import logo from '../assets/logo.jpg';
 
 const Auth: React.FC = () => {
-  const [phone, setPhone] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState('');
-  const [otp, setOtp] = useState('');
-  const [otpError, setOtpError] = useState('');
-  const [otpSuccess, setOtpSuccess] = useState(false);
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [otpLoading, setOtpLoading] = useState(false);
+  const navigate = useNavigate();
+  const { setUser } = useAuth();
 
-  const handlePhoneSubmit = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneRegex.test(phone)) {
-      setError('Please enter a valid phone number (10-15 digits, with optional +).');
+    
+    if (!username.trim()) {
+      toast.error('Vui lòng nhập tên đăng nhập.');
       return;
     }
-    setError('');
+
+    if (!password.trim()) {
+      toast.error('Vui lòng nhập mật khẩu.');
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setSubmitted(true);
-    }, 1200);
+    const success = await loginUser(username, password);
+    setLoading(false);
+
+    if (success) {
+      const user = { username, loggedInAt: new Date().toISOString() };
+      setUser(user);
+      navigate('/events');
+    }
   };
 
-  const handleOtpSubmit = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setOtpLoading(true);
-    setTimeout(() => {
-      setOtpLoading(false);
-      if (otp !== MOCK_OTP) {
-        setOtpError('Invalid OTP. Please try 123456 for demo.');
-        setOtpSuccess(false);
-        return;
-      }
-      setOtpError('');
-      setOtpSuccess(true);
-    }, 1200);
+    
+    if (!username.trim()) {
+      toast.error('Vui lòng nhập tên đăng nhập.');
+      return;
+    }
+
+    if (!validateUsername(username)) {
+      toast.error('Tên đăng nhập phải có 3-20 ký tự, chỉ bao gồm chữ cái, số và dấu gạch dưới.');
+      return;
+    }
+
+    if (!password.trim()) {
+      toast.error('Vui lòng nhập mật khẩu.');
+      return;
+    }
+
+    if (!validatePassword(password)) {
+      toast.error('Mật khẩu phải có ít nhất 6 ký tự.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error('Mật khẩu xác nhận không khớp.');
+      return;
+    }
+
+    setLoading(true);
+    const success = await registerUser(username, password);
+    setLoading(false);
+
+    if (success) {
+      setMode('login');
+      setUsername('');
+      setPassword('');
+      setConfirmPassword('');
+    }
   };
+
+
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <h1 className="text-3xl font-bold mb-4">Login / Register</h1>
-      {!submitted ? (
-        <form onSubmit={handlePhoneSubmit} className="flex flex-col gap-4 w-80">
-          <Input
-            type="tel"
-            placeholder="Enter your phone number"
-            value={phone}
-            onChange={e => setPhone(e.target.value)}
-            required
-            disabled={loading}
-          />
-          {error && <span className="text-destructive text-sm">{error}</span>}
-          <button
-            type="submit"
-            className="bg-orange-600 text-white py-2 rounded hover:bg-orange-700 transition-colors disabled:opacity-60"
-            disabled={loading}
-          >
-            {loading ? 'Sending OTP...' : 'Send OTP'}
-          </button>
-        </form>
-      ) : (
-        <form onSubmit={handleOtpSubmit} className="flex flex-col gap-4 w-80">
-          <Input
-            type="text"
-            placeholder="Enter OTP (try 123456)"
-            value={otp}
-            onChange={e => setOtp(e.target.value)}
-            maxLength={6}
-            required
-            disabled={otpLoading || otpSuccess}
-          />
-          {otpError && <span className="text-destructive text-sm">{otpError}</span>}
-          {otpSuccess && <span className="text-green-600 text-sm">OTP verified! Success.</span>}
-          <button
-            type="submit"
-            className="bg-orange-600 text-white py-2 rounded hover:bg-orange-700 transition-colors disabled:opacity-60"
-            disabled={otpLoading || otpSuccess}
-          >
-            {otpLoading ? 'Verifying...' : 'Verify OTP'}
-          </button>
-        </form>
-      )}
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center p-4">
+      <Toaster position="top-center" />
+
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <img src={logo} alt="logo" className="w-24 h-24 mx-auto" />
+          <CardTitle className="text-4xl font-bold">
+            {mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
+          </CardTitle>
+          <CardDescription>
+            {mode === 'login' 
+              ? 'Nhập thông tin đăng nhập của bạn'
+              : 'Tạo tài khoản mới'
+            }
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="space-y-4">
+            {mode === 'register' && (
+              <div className="space-y-2">
+                <Label htmlFor="username">Tên đăng nhập</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="pl-10"
+                    maxLength={20}
+                  />
+                </div>
+                <p className="text-xs text-gray-500">
+                  3-20 ký tự, chỉ bao gồm chữ cái, số và dấu gạch dưới
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="username">Tên đăng nhập</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="Tên đăng nhập"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="pl-10"
+                  maxLength={20}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Mật khẩu</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="•••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              {mode === 'register' && (
+                <p className="text-xs text-gray-500">
+                  Ít nhất 6 ký tự
+                </p>
+              )}
+            </div>
+
+            {mode === 'register' && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full cursor-pointer"
+            >
+              {loading 
+                ? (mode === 'login' ? 'Đang đăng nhập...' : 'Đang đăng ký...')
+                : (mode === 'login' ? 'Đăng nhập' : 'Đăng ký')
+              }
+            </Button>
+          </form>
+
+          {/* <div className="text-center">
+            <Button
+              variant="link"
+              onClick={switchMode}
+              className="text-sm"
+            >
+              {mode === 'login' 
+                ? 'Chưa có tài khoản? Đăng ký ngay'
+                : 'Đã có tài khoản? Đăng nhập'
+              }
+            </Button>
+          </div> */}
+        </CardContent>
+      </Card>
     </div>
   );
 };

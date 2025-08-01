@@ -42,7 +42,7 @@ The Productivity App is a secure, user-friendly platform designed to help indivi
   - News
   - Products
 - **CMS:** Centralized editing, versioning, and media management for all content types.
-- **Authentication:** SMS OTP for registration and login.
+- **Authentication:** Username/password authentication.
 - **Embedding:** Generate HTML snippets for external use of content.
 
 ---
@@ -51,7 +51,7 @@ The Productivity App is a secure, user-friendly platform designed to help indivi
 
 ### Authentication
 - **Register/Login:**
-  - Enter phone number → Receive OTP via SMS → Enter OTP → Access granted
+  - Enter username and password → Access granted
 - **Security:** Only authenticated users can manage content.
 
 ### Navigation & App Flow
@@ -96,7 +96,7 @@ The Productivity App is a secure, user-friendly platform designed to help indivi
 ## Design Principles
 - **Simplicity:** Minimal, intuitive UI—only essential features exposed.
 - **Real-time Sync:** Updates propagate instantly across devices.
-- **Security:** OTP login, authenticated access, soft deletion.
+- **Security:** Username/password login, authenticated access, soft deletion.
 
 ---
 
@@ -105,7 +105,7 @@ The Productivity App is a secure, user-friendly platform designed to help indivi
 - **News:** Publish/edit articles, support rich media.
 - **Products:** Catalog management, pricing, images, embed support.
 - **CMS:** Central hub for all content, versioning, and media.
-- **Authentication:** Phone + OTP, secure access.
+- **Authentication:** Username + Password, secure access.
 
 ---
 
@@ -119,10 +119,8 @@ The Productivity App is a secure, user-friendly platform designed to help indivi
 
 ### users
 - id: uuid (PK, default: gen_random_uuid())
-- phone: text (unique, not null)
-- otp_token: text
-- otp_expires_at: timestamp
-- created_at: timestamp (default: now())
+- username: text (unique, not null)
+- password_hash: text (not null)
 
 ### members
 - id: text (PK)

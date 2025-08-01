@@ -309,6 +309,30 @@ export async function uploadFileFromInput(file: File, stable: boolean = false): 
   }
 }
 
+// --- Session cache for uploaded blobs ---
+const blobUploadCache = new Map<string, string>(); // hash -> CDN URL
+
+// Helper to hash a blob (using base64 for simplicity)
+async function hashBlob(blob: Blob): Promise<string> {
+  const arrayBuffer = await blob.arrayBuffer();
+  // Use base64 as a quick hash (not cryptographically secure, but fine for session deduplication)
+  return arrayBufferToBase64(arrayBuffer);
+}
+
+// Generalized upload for Blob/File with deduplication
+export async function uploadBlobToCloud(blob: Blob, filename: string, stable: boolean = false): Promise<string | null> {
+  const hash = await hashBlob(blob);
+  if (blobUploadCache.has(hash)) {
+    return blobUploadCache.get(hash)!;
+  }
+  const arrayBuffer = await blob.arrayBuffer();
+  const url = await saveToCloud(filename, arrayBuffer, stable);
+  if (url) {
+    blobUploadCache.set(hash, url);
+  }
+  return url;
+}
+
 // Helper function to convert base64 to ArrayBuffer
 export function base64ToArrayBuffer(base64: string): ArrayBuffer {
   const binaryString = atob(base64);

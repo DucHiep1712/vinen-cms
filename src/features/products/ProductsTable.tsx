@@ -92,10 +92,10 @@ const renderCell = (product: any, key: string) => {
             {enabledFields.length > 2 && ` +${enabledFields.length - 2}`}
           </span>
         ) : (
-          <span className="whitespace-nowrap text-xs text-gray-400">Không có</span>
+          <span className="whitespace-nowrap text-xs text-muted-foreground">Không có</span>
         );
       } catch (error) {
-        return <span className="whitespace-nowrap text-xs text-gray-400">Lỗi</span>;
+        return <span className="whitespace-nowrap text-xs text-muted-foreground">Lỗi</span>;
       }
     case 'description':
       return <span className="whitespace-nowrap">{product.description?.replace(/<[^>]+>/g, '').slice(0, 60) + (product.description?.length > 60 ? '...' : '')}</span>;
