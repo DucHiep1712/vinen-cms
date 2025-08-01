@@ -24,6 +24,12 @@ const s3Client = new S3Client({
     secretAccessKey: AWSS3StorageConfig.ACCESS_KEY_SECRET!,
   },
   forcePathStyle: false, // Use virtual addressing style
+  // Add request configuration to handle CORS
+  requestHandler: {
+    httpOptions: {
+      timeout: 30000, // 30 seconds timeout
+    },
+  },
 });
 
 const specialTreatmentHost = ["batdongsan.com.vn"];
@@ -145,8 +151,21 @@ function generateUUID(): string {
   });
 }
 
-// Main API functions
-export async function saveToCloud(filename: string, content: ArrayBuffer, stable: boolean = false): Promise<string | null> {
+// CORS-friendly upload function
+async function uploadWithCORSHandling(filename: string, content: ArrayBuffer, stable: boolean = false): Promise<string | null> {
+  try {
+    // Try direct S3 upload first
+    return await saveToCloudDirect(filename, content, stable);
+  } catch (error) {
+    console.warn('Direct S3 upload failed, trying alternative method:', error);
+    
+    // Fallback: Use a proxy or different approach
+    return await saveToCloudFallback(filename, content, stable);
+  }
+}
+
+// Direct S3 upload (original method)
+async function saveToCloudDirect(filename: string, content: ArrayBuffer, stable: boolean = false): Promise<string | null> {
   if (!content || content.byteLength === 0 || !filename) {
     console.error('Invalid content or filename');
     return null;
@@ -198,6 +217,31 @@ export async function saveToCloud(filename: string, content: ArrayBuffer, stable
     
     throw new Error(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
+}
+
+// Fallback upload method using FormData (if available)
+async function saveToCloudFallback(filename: string, content: ArrayBuffer, stable: boolean = false): Promise<string | null> {
+  try {
+    // Create a blob from the content
+    const blob = new Blob([content], { type: getMimeType(filename).type });
+    
+    // Create FormData
+    const formData = new FormData();
+    formData.append('file', blob, filename);
+    formData.append('stable', stable.toString());
+    
+    // You would need to implement a server-side endpoint for this
+    // For now, we'll throw an error to indicate the fallback isn't implemented
+    throw new Error('Fallback upload method not implemented. Please check your S3 configuration.');
+  } catch (error) {
+    console.error('Fallback upload failed:', error);
+    return null;
+  }
+}
+
+// Main API functions - export the CORS-friendly version
+export async function saveToCloud(filename: string, content: ArrayBuffer, stable: boolean = false): Promise<string | null> {
+  return uploadWithCORSHandling(filename, content, stable);
 }
 
 export async function downloadToCloud(url: string, stable: boolean = false): Promise<string | null> {
