@@ -10,6 +10,8 @@ function getSupabaseUrl(): string {
   return `${supabaseUrl}/functions/v1/upload-file`;
 }
 
+
+
 // Upload file using the proxy
 export async function uploadFileWithProxy(file: File, stable: boolean = false): Promise<string | null> {
   try {

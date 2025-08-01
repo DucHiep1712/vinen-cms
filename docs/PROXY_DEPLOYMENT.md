@@ -1,4 +1,4 @@
-bas# Upload Proxy Deployment Guide
+# Upload Proxy Deployment Guide
 
 ## Overview
 This guide helps you deploy the upload proxy Edge Function to Supabase to bypass CORS issues with DigitalOcean Spaces.
@@ -73,8 +73,9 @@ The frontend code has already been updated to use the proxy. Make sure your `.en
 
 ```env
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
-VITE_SUPABASE_ANON_KEY=your_anon_key
 ```
+
+**Note:** The current implementation doesn't require authentication for simplicity. For production, you should add authentication to the Edge Function.
 
 ## Troubleshooting
 
