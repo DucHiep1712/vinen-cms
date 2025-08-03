@@ -2,6 +2,9 @@
   "functions": {
     "api/upload-file.ts": {
       "runtime": "@vercel/node@3.0.0"
+    },
+    "api/test.ts": {
+      "runtime": "@vercel/node@3.0.0"
     }
   },
   "build": {

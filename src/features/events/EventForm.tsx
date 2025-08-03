@@ -110,8 +110,6 @@ const EventForm: React.FC = () => {
   const { id } = useParams();
   const editorRef = useRef<any>(null);
 
-  console.log(import.meta.env.VITE_SUPABASE_URL);
-
   useEffect(() => {
     if (id) {
       setLoading(true);

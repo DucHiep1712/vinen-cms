@@ -62,6 +62,8 @@
   - [ ] Check browser network tab for `/api/upload-file` calls
   - [ ] Verify images appear after upload
   - [ ] No CORS errors in console
+  - [ ] Test `/api/test` endpoint for environment variables
+  - [ ] Check Vercel function logs for detailed error messages
 
 - [ ] **All CRUD Operations:**
   - [ ] Create new events/news/products
