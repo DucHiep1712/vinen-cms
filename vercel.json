@@ -11,6 +11,9 @@
     },
     "api/test-upload.ts": {
       "runtime": "@vercel/node@3.0.0"
+    },
+    "api/hello.ts": {
+      "runtime": "@vercel/node@3.0.0"
     }
   },
   "rewrites": [

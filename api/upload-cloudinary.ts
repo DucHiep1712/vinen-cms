@@ -1,28 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Dynamic import for Cloudinary to avoid CommonJS issues
-let cloudinary: any;
-
-async function initCloudinary() {
-  if (!cloudinary) {
-    try {
-      const cloudinaryModule = await import('cloudinary');
-      cloudinary = cloudinaryModule.v2;
-      
-      // Configure Cloudinary
-      cloudinary.config({
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-        api_key: process.env.CLOUDINARY_API_KEY,
-        api_secret: process.env.CLOUDINARY_API_SECRET,
-      });
-    } catch (error) {
-      console.error('Failed to import cloudinary:', error);
-      throw error;
-    }
-  }
-  return cloudinary;
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log('Cloudinary API function called:', req.method, req.url);
   
@@ -47,34 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     console.log('Starting Cloudinary upload process');
     
-    // Initialize Cloudinary
-    const cloudinaryInstance = await initCloudinary();
-    
-    // Check if request has content-type multipart/form-data
-    const contentType = req.headers['content-type'] || '';
-    if (!contentType.includes('multipart/form-data')) {
-      console.log('Invalid content type:', contentType);
-      return res.status(400).json({ success: false, error: 'Content-Type must be multipart/form-data' });
-    }
-
-    // Parse the multipart form data
-    console.log('Parsing multipart form data...');
-    const { file, filename, mimeType, stable } = await parseMultipartFormData(req);
-    
-    console.log('File info:', {
-      filename,
-      size: file.length,
-      mimeType,
-      stable
-    });
-
-    // Validate file size (10MB limit)
-    if (file.length > 10 * 1024 * 1024) {
-      console.log('File too large:', file.length);
-      return res.status(400).json({ success: false, error: 'File too large. Maximum size is 10MB.' });
-    }
-
-    // Check environment variables
+    // Check environment variables first
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
     const apiKey = process.env.CLOUDINARY_API_KEY;
     const apiSecret = process.env.CLOUDINARY_API_SECRET;
@@ -99,6 +49,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // Check if request has content-type multipart/form-data
+    const contentType = req.headers['content-type'] || '';
+    if (!contentType.includes('multipart/form-data')) {
+      console.log('Invalid content type:', contentType);
+      return res.status(400).json({ success: false, error: 'Content-Type must be multipart/form-data' });
+    }
+
+    // Parse the multipart form data
+    console.log('Parsing multipart form data...');
+    const { file, filename, mimeType, stable } = await parseMultipartFormData(req);
+    
+    console.log('File info:', {
+      filename,
+      size: file.length,
+      mimeType,
+      stable
+    });
+
+    // Validate file size (10MB limit)
+    if (file.length > 10 * 1024 * 1024) {
+      console.log('File too large:', file.length);
+      return res.status(400).json({ success: false, error: 'File too large. Maximum size is 10MB.' });
+    }
+
+    // Initialize Cloudinary with dynamic import
+    console.log('Initializing Cloudinary...');
+    const cloudinaryModule = await import('cloudinary');
+    const cloudinary = cloudinaryModule.v2;
+    
+    // Configure Cloudinary
+    cloudinary.config({
+      cloud_name: cloudName,
+      api_key: apiKey,
+      api_secret: apiSecret,
+    });
+
     console.log('Uploading to Cloudinary...');
     
     // Convert buffer to base64
@@ -107,7 +93,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Upload to Cloudinary
     const uploadResult = await new Promise((resolve, reject) => {
-      cloudinaryInstance.uploader.upload(
+      cloudinary.uploader.upload(
         dataURI,
         {
           folder: stable ? 'stable' : 'uploads',
