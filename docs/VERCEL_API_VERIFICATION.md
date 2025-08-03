@@ -4,10 +4,20 @@
 
 All API functions follow the correct Vercel signature:
 
+### For TypeScript files (.ts):
 ```typescript
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Function logic here
+}
+```
+
+### For CommonJS files (.cjs):
+```javascript
+const { VercelRequest, VercelResponse } = require('@vercel/node');
+
+module.exports = async function handler(req, res) {
   // Function logic here
 }
 ```
@@ -18,22 +28,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 - **Purpose**: Minimal test to verify Vercel API routes work
 - **Method**: GET
 - **Response**: Simple JSON with timestamp
+- **File**: `api/hello.ts`
 
 ### 2. `/api/test` - Environment Test
 - **Purpose**: Check environment variables and basic setup
 - **Method**: GET
 - **Response**: Environment variable status
+- **File**: `api/test.ts`
 
 ### 3. `/api/test-upload` - Upload API Test
 - **Purpose**: Test Cloudinary import and configuration
 - **Method**: GET
 - **Response**: Cloudinary setup status
+- **File**: `api/test-upload.ts`
 
 ### 4. `/api/upload-cloudinary` - File Upload
 - **Purpose**: Handle file uploads to Cloudinary
 - **Method**: POST
 - **Request**: multipart/form-data
 - **Response**: Uploaded file URL
+- **File**: `api/upload-cloudinary.cjs` (CommonJS for Cloudinary compatibility)
 
 ## 🔍 Verification Steps
 
@@ -141,12 +155,12 @@ curl -X POST \
 2. Verify environment variables are set
 3. Check that all dependencies are installed
 
-### Issue: CommonJS Error
-**Cause**: Module compatibility issue
+### Issue: CommonJS Error (RESOLVED)
+**Cause**: Module compatibility issue with Cloudinary
 **Solution**:
-1. The functions now use dynamic imports
-2. Redeploy to get the updated functions
-3. Check that `@vercel/node` is properly configured
+1. ✅ **FIXED**: Upload function now uses `.cjs` extension
+2. ✅ **FIXED**: Uses `require()` instead of `import()`
+3. ✅ **FIXED**: Uses `module.exports` instead of `export default`
 
 ### Issue: Import Error
 **Cause**: Missing dependency
@@ -189,18 +203,27 @@ vercel dev
 
 ## 📝 Notes
 
-1. **Function Signatures**: All functions use the correct `export default async function handler(req, res)` signature
+1. **Function Signatures**: All functions use the correct signature for their file type
 2. **CORS Headers**: All functions set proper CORS headers
 3. **Error Handling**: All functions include try-catch blocks
 4. **Environment Variables**: Functions check for required environment variables
-5. **Dynamic Imports**: Cloudinary uses dynamic imports to avoid CommonJS issues
+5. **CommonJS for Cloudinary**: Upload function uses `.cjs` extension to avoid ES module issues
+6. **Mixed Module Types**: Some functions use ES modules (`.ts`), others use CommonJS (`.cjs`)
 
 ## ✅ Success Criteria
 
 Your API functions are working correctly if:
 - All test endpoints return 200 status
 - Environment variables are properly detected
-- Cloudinary can be imported successfully
+- Cloudinary can be imported successfully using CommonJS
 - File uploads work without errors
 - CORS headers are set correctly
-- Error messages are descriptive and helpful 
+- Error messages are descriptive and helpful
+
+## 🎯 Key Changes Made
+
+1. **Renamed**: `api/upload-cloudinary.ts` → `api/upload-cloudinary.cjs`
+2. **Updated**: Function to use CommonJS syntax (`require`, `module.exports`)
+3. **Fixed**: Cloudinary import to use `require('cloudinary').v2`
+4. **Updated**: Vercel configuration to reference the new file
+5. **Resolved**: ES module compatibility issues 
