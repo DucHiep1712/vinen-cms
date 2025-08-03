@@ -1,152 +1,173 @@
 # Troubleshooting 500 Upload Error
 
 ## Problem
-Getting "Upload failed with status 500" when trying to upload files.
+Getting "Upload failed with status 500" when trying to upload files after deploying to Vercel.
 
-## Step-by-Step Diagnosis
+## Quick Diagnosis Steps
 
-### 1. Test API Endpoint
-First, test if the API is working at all:
+### Step 1: Test API Endpoints
+Test these endpoints on your deployed Vercel app:
 
-```bash
-curl https://your-vercel-app.vercel.app/api/test
-```
+1. **Basic API test:**
+   ```bash
+   curl https://your-vercel-app.vercel.app/api/test
+   ```
 
-This should return:
-```json
-{
-  "success": true,
-  "message": "API is working",
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "environment": {
-    "DO_SPACES_KEY": true,
-    "DO_SPACES_SECRET": true,
-    "DO_SPACES_REGION": "sgp1",
-    "DO_SPACES_BUCKET": "your-bucket",
-    "NODE_ENV": "production"
-  }
-}
-```
+2. **Upload API test:**
+   ```bash
+   curl https://your-vercel-app.vercel.app/api/test-upload
+   ```
 
-### 2. Check Environment Variables
-If the test endpoint shows missing environment variables:
+3. **Cloudinary API test:**
+   ```bash
+   curl https://your-vercel-app.vercel.app/api/upload-cloudinary
+   ```
+
+### Step 2: Check Environment Variables in Vercel
 
 1. **Go to Vercel Dashboard**
 2. **Navigate to your project**
 3. **Click "Settings" tab**
 4. **Go to "Environment Variables"**
-5. **Add/verify these variables:**
-   ```
-   DO_SPACES_KEY=your_digitalocean_spaces_key
-   DO_SPACES_SECRET=your_digitalocean_spaces_secret
-   DO_SPACES_REGION=sgp1
-   DO_SPACES_BUCKET=your_bucket_name
-   ```
+5. **Verify these variables are set:**
 
-### 3. Check Vercel Function Logs
+```env
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
+
+### Step 3: Check Vercel Function Logs
+
 1. **Go to Vercel Dashboard**
 2. **Click on your project**
 3. **Go to "Functions" tab**
-4. **Click on `/api/upload-file`**
+4. **Click on `/api/upload-cloudinary`**
 5. **Check the logs for detailed error messages**
 
-### 4. Common Issues and Solutions
+## Common Issues and Solutions
 
-#### Issue: Missing Environment Variables
-**Symptoms:** Logs show "Missing environment variables"
-**Solution:** Set all required environment variables in Vercel dashboard
+### Issue 1: Missing Environment Variables
+**Symptoms:** Logs show "Missing Cloudinary environment variables"
+**Solution:** 
+1. Set all three Cloudinary environment variables in Vercel dashboard
+2. Redeploy the project after adding variables
 
-#### Issue: DigitalOcean Credentials Invalid
+### Issue 2: Cloudinary Credentials Invalid
 **Symptoms:** S3 upload fails with authentication error
 **Solution:** 
-1. Verify your DigitalOcean Spaces credentials
-2. Check that the bucket exists and is accessible
-3. Ensure the access key has proper permissions
+1. Verify your Cloudinary credentials are correct
+2. Check that the cloud name, API key, and API secret match your Cloudinary dashboard
+3. Ensure the credentials have proper permissions
 
-#### Issue: File Too Large
-**Symptoms:** Logs show "File too large"
-**Solution:** Reduce file size to under 10MB
+### Issue 3: Function Not Deployed
+**Symptoms:** 404 error when calling API endpoints
+**Solution:**
+1. Check that all API function files are in the `/api` folder
+2. Verify `vercel.json` includes all functions
+3. Redeploy the project
 
-#### Issue: CommonJS Module Error
-**Symptoms:** "exports is not defined in ES module scope" or "ReferenceError: exports is not defined"
-**Solution:** 
-1. The API function now uses native Node.js modules instead of formidable
-2. All imports use ES module syntax
-3. No CommonJS dependencies
+### Issue 4: Cloudinary Package Not Installed
+**Symptoms:** Import errors in function logs
+**Solution:**
+1. Ensure `cloudinary` package is in `package.json`
+2. Redeploy to install dependencies
 
-#### Issue: Multipart Parse Error
-**Symptoms:** Logs show "No file found in form data" or parsing errors
-**Solution:** 
-1. Check that the file is being sent correctly
-2. Verify the form data structure
-3. Try with a smaller file first
-4. Ensure Content-Type is multipart/form-data
+### Issue 5: Function Timeout
+**Symptoms:** Function times out after 10 seconds
+**Solution:**
+1. Reduce file size (max 10MB)
+2. Check function execution time in Vercel logs
+3. Optimize the upload process
 
-#### Issue: File System Error
-**Symptoms:** Logs show file system errors
-**Solution:** 
-1. Check that the temporary file path is accessible
-2. Verify file permissions
-3. Try redeploying the function
+## Step-by-Step Fix
 
-### 5. Debugging Steps
+### Step 1: Verify Environment Variables
+1. **Go to Vercel Dashboard → Your Project → Settings → Environment Variables**
+2. **Add/verify these variables:**
+   ```
+   CLOUDINARY_CLOUD_NAME=your_cloud_name
+   CLOUDINARY_API_KEY=your_api_key
+   CLOUDINARY_API_SECRET=your_api_secret
+   ```
+3. **Click "Save"**
 
-#### Step 1: Check Browser Network Tab
-1. Open browser developer tools
-2. Go to Network tab
-3. Try uploading a file
-4. Look for the `/api/upload-file` request
-5. Check the response for detailed error messages
+### Step 2: Redeploy
+```bash
+vercel --prod
+```
 
-#### Step 2: Test with Different Files
-1. Try uploading a small image (< 1MB)
-2. Try different file types (JPG, PNG, etc.)
-3. Check if the issue is file-specific
+### Step 3: Test the API
+1. **Test basic endpoint:**
+   ```bash
+   curl https://your-app.vercel.app/api/test-upload
+   ```
+2. **Check response for environment variable status**
 
-#### Step 3: Check DigitalOcean Spaces
-1. Verify your bucket exists
-2. Check bucket permissions
-3. Test uploading directly to DigitalOcean Spaces
-4. Verify the region is correct
+### Step 4: Test File Upload
+1. **Go to your deployed app**
+2. **Try uploading a small image (< 1MB)**
+3. **Check browser network tab for API calls**
+4. **Check Vercel function logs for errors**
 
-### 6. Advanced Debugging
+## Debugging Commands
 
-#### Enable Detailed Logging
-The API function now includes detailed logging. Check Vercel function logs for:
-- Environment variable status
-- File parsing details
-- S3 client initialization
-- Upload progress
-- Error stack traces
+### Check Function Status
+```bash
+# List all functions
+vercel functions ls
 
-#### Test Locally (if possible)
-1. Set up environment variables locally
-2. Test the API function with a local server
-3. Use tools like Postman to test the endpoint
+# Check function logs
+vercel logs --function=api/upload-cloudinary
+```
 
-### 7. Emergency Workaround
+### Test Environment Variables
+```bash
+# Test environment variables locally
+node -e "console.log(process.env.CLOUDINARY_CLOUD_NAME)"
+```
 
-If the issue persists, you can temporarily use direct upload:
+### Check Deployment Status
+```bash
+# Check deployment status
+vercel ls
 
-1. **Update `src/services/fileApi.ts`**
-2. **Comment out the Vercel API calls**
-3. **Use direct DigitalOcean upload** (may have CORS issues)
+# Get deployment URL
+vercel inspect
+```
 
-### 8. Contact Support
+## Emergency Workaround
 
-If none of the above solutions work:
+If the issue persists, you can temporarily use mock uploads:
 
-1. **Collect logs** from Vercel function
-2. **Screenshot** the error from browser console
-3. **Document** the steps to reproduce
-4. **Check** if the issue is intermittent or consistent
+1. **Add this environment variable in Vercel:**
+   ```
+   VITE_USE_MOCK_API=true
+   ```
+
+2. **Redeploy:**
+   ```bash
+   vercel --prod
+   ```
+
+3. **This will use mock uploads** instead of real Cloudinary uploads
 
 ## Prevention
 
 To prevent future 500 errors:
 
-1. **Monitor function logs** regularly
-2. **Set up alerts** for function failures
-3. **Test uploads** after any deployment
-4. **Keep environment variables** up to date
-5. **Use proper error handling** in frontend code 
+1. **Always test locally first** with `vercel dev`
+2. **Set environment variables before deploying**
+3. **Check function logs after deployment**
+4. **Use smaller files for testing**
+5. **Monitor Vercel function execution times**
+
+## Getting Help
+
+If none of the above solutions work:
+
+1. **Collect Vercel function logs**
+2. **Screenshot the error from browser console**
+3. **Document the steps to reproduce**
+4. **Check if the issue is intermittent or consistent**
+5. **Contact Vercel support with logs and error details** 

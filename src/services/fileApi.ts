@@ -241,15 +241,24 @@ async function saveToCloudFallback(filename: string, content: ArrayBuffer, stabl
 
 // Import proxy functions
 import { uploadFileWithCloudinary, uploadBlobWithCloudinary } from './cloudinaryFileApi';
+import { uploadFileWithMock, uploadBlobWithMock } from './mockFileApi';
+
+// Switch between mock and real API based on environment
+const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true';
 
 // Main API functions - use proxy by default to avoid CORS issues
 export async function saveToCloud(filename: string, content: ArrayBuffer, stable: boolean = false): Promise<string | null> {
   try {
     // Convert ArrayBuffer to Blob
     const blob = new Blob([content], { type: getMimeType(filename).type });
-    return await uploadBlobWithCloudinary(blob, filename, stable);
+    
+    if (USE_MOCK_API) {
+      return await uploadBlobWithMock(blob, filename, stable);
+    } else {
+      return await uploadBlobWithCloudinary(blob, filename, stable);
+    }
   } catch (error) {
-    console.error('Proxy upload failed, falling back to direct upload:', error);
+    console.error('Upload failed, falling back to direct upload:', error);
     // Fallback to direct upload if proxy fails
     return uploadWithCORSHandling(filename, content, stable);
   }
@@ -355,10 +364,14 @@ export async function concurrentDownloadToCloud(urls: string[]): Promise<(string
 
 // Helper function to upload file from input
 export async function uploadFileFromInput(file: File, stable: boolean = false): Promise<string | null> {
-  try {
-    // Use proxy upload for files
-    return await uploadFileWithCloudinary(file, stable);
-  } catch (error) {
+      try {
+      // Use proxy upload for files
+      if (USE_MOCK_API) {
+        return await uploadFileWithMock(file, stable);
+      } else {
+        return await uploadFileWithCloudinary(file, stable);
+      }
+    } catch (error) {
     console.error('Upload file failed:', error);
     return null;
   }
@@ -380,8 +393,10 @@ export async function uploadBlobToCloud(blob: Blob, filename: string, stable: bo
   if (blobUploadCache.has(hash)) {
     return blobUploadCache.get(hash)!;
   }
-  // Use proxy upload for blobs
-      const url = await uploadBlobWithCloudinary(blob, filename, stable);
+      // Use proxy upload for blobs
+    const url = USE_MOCK_API 
+      ? await uploadBlobWithMock(blob, filename, stable)
+      : await uploadBlobWithCloudinary(blob, filename, stable);
   if (url) {
     blobUploadCache.set(hash, url);
   }
