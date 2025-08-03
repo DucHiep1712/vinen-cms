@@ -1,8 +1,86 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import formidable from 'formidable';
 import { promises as fs } from 'fs';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
+
+// Simple multipart parser for file uploads
+async function parseMultipartFormData(req: VercelRequest): Promise<{ file: Buffer; filename: string; mimeType: string; stable: boolean }> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let boundary = '';
+    
+    req.on('data', (chunk: Buffer) => {
+      chunks.push(chunk);
+    });
+
+    req.on('end', () => {
+      try {
+        const body = Buffer.concat(chunks);
+        const contentType = req.headers['content-type'] || '';
+        boundary = contentType.split('boundary=')[1];
+        
+        if (!boundary) {
+          reject(new Error('No boundary found in content-type'));
+          return;
+        }
+
+        // Parse multipart data
+        const parts = body.toString('binary').split(`--${boundary}`);
+        
+        for (const part of parts) {
+          if (part.includes('Content-Disposition: form-data')) {
+            const lines = part.split('\r\n');
+            let filename = '';
+            let mimeType = 'application/octet-stream';
+            let stable = false;
+            let fileData = '';
+
+            for (let i = 0; i < lines.length; i++) {
+              const line = lines[i];
+              
+              if (line.includes('name="file"')) {
+                // Extract filename
+                const filenameMatch = line.match(/filename="([^"]+)"/);
+                if (filenameMatch) {
+                  filename = filenameMatch[1];
+                }
+                
+                // Get content type
+                if (i + 1 < lines.length && lines[i + 1].includes('Content-Type:')) {
+                  mimeType = lines[i + 1].split(': ')[1];
+                }
+                
+                // Get file data (everything after the headers)
+                const dataStart = part.indexOf('\r\n\r\n') + 4;
+                fileData = part.substring(dataStart);
+                break;
+              } else if (line.includes('name="stable"')) {
+                // Extract stable value
+                const dataStart = part.indexOf('\r\n\r\n') + 4;
+                const stableValue = part.substring(dataStart).replace(/\r\n/g, '');
+                stable = stableValue === 'true';
+              }
+            }
+
+            if (filename && fileData) {
+              const fileBuffer = Buffer.from(fileData, 'binary');
+              resolve({ file: fileBuffer, filename, mimeType, stable });
+              return;
+            }
+          }
+        }
+        
+        reject(new Error('No file found in form data'));
+      } catch (error) {
+        reject(error);
+      }
+    });
+
+    req.on('error', (error) => {
+      reject(error);
+    });
+  });
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log('API function called:', req.method, req.url);
@@ -28,47 +106,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     console.log('Starting file upload process');
     
-    // Parse form data
-    const form = formidable({
-      maxFileSize: 10 * 1024 * 1024, // 10MB
-      keepExtensions: true,
-    });
-
-    console.log('Parsing form data...');
-    const [fields, files] = await new Promise<[formidable.Fields, formidable.Files]>((resolve, reject) => {
-      form.parse(req, (err, fields, files) => {
-        if (err) {
-          console.error('Formidable parse error:', err);
-          reject(err);
-        } else {
-          console.log('Form data parsed successfully');
-          console.log('Fields:', Object.keys(fields));
-          console.log('Files:', Object.keys(files));
-          resolve([fields, files]);
-        }
-      });
-    });
-
-    const fileArray = files.file as formidable.File[];
-    const file = fileArray?.[0];
-    const stable = Array.isArray(fields.stable) ? fields.stable[0] === 'true' : fields.stable === 'true';
-
-    console.log('File info:', {
-      hasFile: !!file,
-      fileName: file?.originalFilename,
-      fileSize: file?.size,
-      mimeType: file?.mimetype,
-      stable: stable
-    });
-
-    if (!file) {
-      console.log('No file provided');
-      return res.status(400).json({ success: false, error: 'No file provided' });
+    // Check if request has content-type multipart/form-data
+    const contentType = req.headers['content-type'] || '';
+    if (!contentType.includes('multipart/form-data')) {
+      console.log('Invalid content type:', contentType);
+      return res.status(400).json({ success: false, error: 'Content-Type must be multipart/form-data' });
     }
 
-    // Validate file size
-    if (file.size > 10 * 1024 * 1024) {
-      console.log('File too large:', file.size);
+    // Parse the multipart form data
+    console.log('Parsing multipart form data...');
+    const { file, filename, mimeType, stable } = await parseMultipartFormData(req);
+    
+    console.log('File info:', {
+      filename,
+      size: file.length,
+      mimeType,
+      stable
+    });
+
+    // Validate file size (10MB limit)
+    if (file.length > 10 * 1024 * 1024) {
+      console.log('File too large:', file.length);
       return res.status(400).json({ success: false, error: 'File too large. Maximum size is 10MB.' });
     }
 
@@ -115,18 +173,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Generate filename with timestamp and UUID
     const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const uuid = randomUUID();
-    const fileExtension = file.originalFilename?.split('.').pop() || 'jpg';
-    const filename = `${timestamp}-${uuid}.${fileExtension}`;
+    const fileExtension = filename.split('.').pop() || 'jpg';
+    const newFilename = `${timestamp}-${uuid}.${fileExtension}`;
 
     // Determine folder structure
     const rootFolder = "new";
     const subFolder = stable ? "stable" : timestamp;
-    const mimeType = file.mimetype || 'application/octet-stream';
     const folder = mimeType.split('/')[0]; // 'image', 'video', etc.
-    const objectKey = `${rootFolder}/${folder}/${subFolder}/${filename}`;
+    const objectKey = `${rootFolder}/${folder}/${subFolder}/${newFilename}`;
 
     console.log('File details:', {
-      filename,
+      newFilename,
       objectKey,
       mimeType,
       folder,
@@ -134,17 +191,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       subFolder
     });
 
-    console.log('Reading file buffer...');
-    // Read file buffer
-    const fileBuffer = await fs.readFile(file.filepath);
-    console.log('File buffer size:', fileBuffer.length);
-
     console.log('Uploading to DigitalOcean Spaces...');
     // Upload to DigitalOcean Spaces
     const command = new PutObjectCommand({
       Bucket: bucket,
       Key: objectKey,
-      Body: fileBuffer,
+      Body: file,
       ACL: 'public-read',
       ContentType: mimeType,
     });
@@ -161,17 +213,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const url = `https://${bucket}.${region}.digitaloceanspaces.com/${objectKey}`;
     console.log('Generated URL:', url);
 
-    console.log('Cleaning up temporary file...');
-    // Clean up temporary file
-    await fs.unlink(file.filepath);
-    console.log('Temporary file cleaned up');
-
     console.log('Upload completed successfully');
     return res.status(200).json({
       success: true,
       url: url,
-      filename: filename,
-      size: file.size,
+      filename: newFilename,
+      size: file.length,
       type: mimeType,
     });
 

@@ -67,12 +67,20 @@ If the test endpoint shows missing environment variables:
 **Symptoms:** Logs show "File too large"
 **Solution:** Reduce file size to under 10MB
 
-#### Issue: Formidable Parse Error
-**Symptoms:** Logs show "Formidable parse error"
+#### Issue: CommonJS Module Error
+**Symptoms:** "exports is not defined in ES module scope" or "ReferenceError: exports is not defined"
+**Solution:** 
+1. The API function now uses native Node.js modules instead of formidable
+2. All imports use ES module syntax
+3. No CommonJS dependencies
+
+#### Issue: Multipart Parse Error
+**Symptoms:** Logs show "No file found in form data" or parsing errors
 **Solution:** 
 1. Check that the file is being sent correctly
 2. Verify the form data structure
 3. Try with a smaller file first
+4. Ensure Content-Type is multipart/form-data
 
 #### Issue: File System Error
 **Symptoms:** Logs show file system errors

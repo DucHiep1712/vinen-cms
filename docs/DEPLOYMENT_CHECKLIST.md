@@ -90,6 +90,11 @@
 2. Verify all dependencies are in `package.json`
 3. Check for syntax errors in code
 
+### If CommonJS Module Error:
+1. Ensure all imports use ES module syntax
+2. Check that no CommonJS modules are being used
+3. Verify `package.json` has `"type": "module"`
+
 ## Monitoring
 
 - [ ] Set up Vercel analytics
