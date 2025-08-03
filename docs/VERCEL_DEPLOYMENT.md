@@ -87,6 +87,13 @@ Frontend → Vercel API (/api/upload-file) → DigitalOcean Spaces
    - Check TypeScript compilation
    - Verify all dependencies are installed
 
+4. **MIME Type Error: "Expected a JavaScript module script but the server responded with a MIME type of text/html"**
+   - This usually means the API route is not being served correctly
+   - Ensure `vercel.json` has the correct configuration
+   - Check that the API function is in the correct location (`api/upload-file.ts`)
+   - Verify the function exports correctly
+   - Try redeploying the function specifically
+
 ### Checking Logs
 
 In Vercel dashboard:

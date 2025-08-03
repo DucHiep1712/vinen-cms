@@ -3,13 +3,6 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import formidable from 'formidable';
 import { promises as fs } from 'fs';
 
-// Disable default body parser to handle file uploads
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -41,8 +34,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     });
 
-    const file = files.file as formidable.File;
-    const stable = fields.stable === 'true';
+    const fileArray = files.file as formidable.File[];
+    const file = fileArray?.[0];
+    const stable = Array.isArray(fields.stable) ? fields.stable[0] === 'true' : fields.stable === 'true';
 
     if (!file) {
       return res.status(400).json({ success: false, error: 'No file provided' });

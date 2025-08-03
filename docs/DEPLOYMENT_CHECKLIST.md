@@ -1,0 +1,90 @@
+# Vercel Deployment Checklist
+
+## Pre-Deployment
+
+- [ ] **Environment Variables Set in Vercel Dashboard:**
+  - [ ] `DO_SPACES_KEY`
+  - [ ] `DO_SPACES_SECRET`
+  - [ ] `DO_SPACES_REGION`
+  - [ ] `DO_SPACES_BUCKET`
+  - [ ] `VITE_SUPABASE_URL`
+  - [ ] `VITE_SUPABASE_ANON_KEY`
+  - [ ] `VITE_TINYMCE_API_KEY`
+
+- [ ] **Files Present:**
+  - [ ] `vercel.json` - Vercel configuration
+  - [ ] `api/upload-file.ts` - Serverless function
+  - [ ] `src/services/vercelFileApi.ts` - Frontend API functions
+  - [ ] All React components and pages
+
+- [ ] **Build Test:**
+  - [ ] `npm run build` completes successfully
+  - [ ] No TypeScript errors
+  - [ ] All dependencies installed
+
+## Deployment Steps
+
+1. **Install Vercel CLI:**
+   ```bash
+   npm i -g vercel
+   ```
+
+2. **Login to Vercel:**
+   ```bash
+   vercel login
+   ```
+
+3. **Deploy:**
+   ```bash
+   vercel --prod
+   ```
+
+## Post-Deployment Verification
+
+- [ ] **App Loads Correctly:**
+  - [ ] Homepage loads without errors
+  - [ ] No console errors in browser
+  - [ ] Navigation works
+
+- [ ] **Authentication Works:**
+  - [ ] Login form loads
+  - [ ] Can authenticate with Supabase
+  - [ ] Protected routes work
+
+- [ ] **File Uploads Work:**
+  - [ ] Try uploading an image in any form
+  - [ ] Check browser network tab for `/api/upload-file` calls
+  - [ ] Verify images appear after upload
+  - [ ] No CORS errors in console
+
+- [ ] **All CRUD Operations:**
+  - [ ] Create new events/news/products
+  - [ ] Edit existing items
+  - [ ] Delete items
+  - [ ] Search functionality works
+
+## Troubleshooting
+
+### If MIME Type Error Occurs:
+1. Check Vercel function logs
+2. Verify `vercel.json` configuration
+3. Ensure API function exports correctly
+4. Try redeploying specific function
+
+### If File Uploads Fail:
+1. Check environment variables in Vercel dashboard
+2. Verify DigitalOcean Spaces credentials
+3. Check function logs for errors
+4. Test with smaller files first
+
+### If Build Fails:
+1. Check TypeScript compilation locally
+2. Verify all dependencies are in `package.json`
+3. Check for syntax errors in code
+
+## Monitoring
+
+- [ ] Set up Vercel analytics
+- [ ] Monitor function execution times
+- [ ] Check error logs regularly
+- [ ] Monitor file upload success rates 
