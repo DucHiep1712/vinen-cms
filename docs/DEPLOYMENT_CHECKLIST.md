@@ -21,6 +21,12 @@
   - [ ] `npm run build` completes successfully
   - [ ] No TypeScript errors
   - [ ] All dependencies installed
+  - [ ] Node.js version is 18.x (check with `node --version`)
+
+- [ ] **Node.js Version Configuration:**
+  - [ ] `package.json` has `"engines": { "node": "18.x" }`
+  - [ ] `.nvmrc` file contains `18`
+  - [ ] Vercel project settings set to Node.js 18.x
 
 ## Deployment Steps
 

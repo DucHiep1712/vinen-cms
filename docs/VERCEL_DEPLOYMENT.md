@@ -17,7 +17,11 @@ This guide explains how to deploy the CMS app on Vercel with CORS-free file uplo
 Make sure your repository includes:
 - `vercel.json` - Vercel configuration
 - `api/upload-file.ts` - Serverless function for file uploads
+- `package.json` - With Node.js 18.x specified in engines
+- `.nvmrc` - Node.js version specification
 - All frontend files
+
+**Important:** This project requires Node.js 18.x. Make sure your Vercel project is set to use Node.js 18.x in the project settings.
 
 ## Step 2: Set Environment Variables in Vercel
 
@@ -86,6 +90,12 @@ Frontend → Vercel API (/api/upload-file) → DigitalOcean Spaces
 3. **Build Errors**
    - Check TypeScript compilation
    - Verify all dependencies are installed
+
+4. **Node.js Version Error: "Found invalid Node.js Version: 22.x"**
+   - Ensure Vercel project is set to Node.js 18.x
+   - Check that `package.json` has `"engines": { "node": "18.x" }`
+   - Verify `.nvmrc` file contains `18`
+   - Redeploy after changing Node.js version in Vercel settings
 
 4. **MIME Type Error: "Expected a JavaScript module script but the server responded with a MIME type of text/html"**
    - This usually means the API route is not being served correctly
