@@ -41,5 +41,6 @@
         }
       ]
     }
-  ]
+  ],
+  "installCommand": "npm install --include=dev"
 }
