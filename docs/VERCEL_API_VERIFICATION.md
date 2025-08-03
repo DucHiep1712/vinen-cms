@@ -162,6 +162,13 @@ curl -X POST \
 2. ✅ **FIXED**: Uses `require()` instead of `import()`
 3. ✅ **FIXED**: Uses `module.exports` instead of `export default`
 
+### Issue: File Conflict Error (RESOLVED)
+**Cause**: Duplicate files with same name but different extensions
+**Solution**:
+1. ✅ **FIXED**: Removed duplicate files (`api/upload-cloudinary.ts`, `api/test.cjs`, `api/upload-file.ts`)
+2. ✅ **FIXED**: Clean API directory structure
+3. ✅ **FIXED**: Updated `vercel.json` to reference correct files
+
 ### Issue: Import Error
 **Cause**: Missing dependency
 **Solution**:
@@ -209,6 +216,7 @@ vercel dev
 4. **Environment Variables**: Functions check for required environment variables
 5. **CommonJS for Cloudinary**: Upload function uses `.cjs` extension to avoid ES module issues
 6. **Mixed Module Types**: Some functions use ES modules (`.ts`), others use CommonJS (`.cjs`)
+7. **Clean Structure**: No duplicate files or naming conflicts
 
 ## ✅ Success Criteria
 
@@ -226,4 +234,16 @@ Your API functions are working correctly if:
 2. **Updated**: Function to use CommonJS syntax (`require`, `module.exports`)
 3. **Fixed**: Cloudinary import to use `require('cloudinary').v2`
 4. **Updated**: Vercel configuration to reference the new file
-5. **Resolved**: ES module compatibility issues 
+5. **Resolved**: ES module compatibility issues
+6. **Cleaned**: Removed duplicate files to prevent conflicts
+7. **Simplified**: API directory structure
+
+## 📁 Current API Directory Structure
+
+```
+api/
+├── hello.ts              # Basic test function
+├── test.ts               # Environment test function
+├── test-upload.ts        # Upload API test function
+└── upload-cloudinary.cjs # File upload function (CommonJS)
+``` 

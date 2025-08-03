@@ -1,8 +1,5 @@
 {
   "functions": {
-    "api/upload-file.ts": {
-      "runtime": "@vercel/node@3.0.0"
-    },
     "api/upload-cloudinary.cjs": {
       "runtime": "@vercel/node@3.0.0"
     },
