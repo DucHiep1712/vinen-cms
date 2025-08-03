@@ -240,14 +240,14 @@ async function saveToCloudFallback(filename: string, content: ArrayBuffer, stabl
 }
 
 // Import proxy functions
-import { uploadFileWithVercel, uploadBlobWithVercel } from './vercelFileApi';
+import { uploadFileWithCloudinary, uploadBlobWithCloudinary } from './cloudinaryFileApi';
 
 // Main API functions - use proxy by default to avoid CORS issues
 export async function saveToCloud(filename: string, content: ArrayBuffer, stable: boolean = false): Promise<string | null> {
   try {
     // Convert ArrayBuffer to Blob
     const blob = new Blob([content], { type: getMimeType(filename).type });
-    return await uploadBlobWithVercel(blob, filename, stable);
+    return await uploadBlobWithCloudinary(blob, filename, stable);
   } catch (error) {
     console.error('Proxy upload failed, falling back to direct upload:', error);
     // Fallback to direct upload if proxy fails
@@ -357,7 +357,7 @@ export async function concurrentDownloadToCloud(urls: string[]): Promise<(string
 export async function uploadFileFromInput(file: File, stable: boolean = false): Promise<string | null> {
   try {
     // Use proxy upload for files
-    return await uploadFileWithVercel(file, stable);
+    return await uploadFileWithCloudinary(file, stable);
   } catch (error) {
     console.error('Upload file failed:', error);
     return null;
@@ -381,7 +381,7 @@ export async function uploadBlobToCloud(blob: Blob, filename: string, stable: bo
     return blobUploadCache.get(hash)!;
   }
   // Use proxy upload for blobs
-      const url = await uploadBlobWithVercel(blob, filename, stable);
+      const url = await uploadBlobWithCloudinary(blob, filename, stable);
   if (url) {
     blobUploadCache.set(hash, url);
   }

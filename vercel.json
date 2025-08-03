@@ -3,13 +3,11 @@
     "api/upload-file.ts": {
       "runtime": "@vercel/node@3.0.0"
     },
+    "api/upload-cloudinary.ts": {
+      "runtime": "@vercel/node@3.0.0"
+    },
     "api/test.ts": {
       "runtime": "@vercel/node@3.0.0"
-    }
-  },
-  "build": {
-    "env": {
-      "NODE_VERSION": "18"
     }
   },
   "rewrites": [

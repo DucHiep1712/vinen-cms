@@ -1,20 +1,24 @@
-# Vercel Deployment Checklist
+# Vercel + Cloudinary Deployment Checklist
 
 ## Pre-Deployment
 
+- [ ] **Cloudinary Account Setup:**
+  - [ ] Create Cloudinary account at [cloudinary.com](https://cloudinary.com)
+  - [ ] Get Cloud Name, API Key, and API Secret from dashboard
+  - [ ] Note down your free tier limits (25GB storage, 25GB bandwidth/month)
+
 - [ ] **Environment Variables Set in Vercel Dashboard:**
-  - [ ] `DO_SPACES_KEY`
-  - [ ] `DO_SPACES_SECRET`
-  - [ ] `DO_SPACES_REGION`
-  - [ ] `DO_SPACES_BUCKET`
+  - [ ] `CLOUDINARY_CLOUD_NAME`
+  - [ ] `CLOUDINARY_API_KEY`
+  - [ ] `CLOUDINARY_API_SECRET`
   - [ ] `VITE_SUPABASE_URL`
   - [ ] `VITE_SUPABASE_ANON_KEY`
   - [ ] `VITE_TINYMCE_API_KEY`
 
 - [ ] **Files Present:**
   - [ ] `vercel.json` - Vercel configuration
-  - [ ] `api/upload-file.ts` - Serverless function
-  - [ ] `src/services/vercelFileApi.ts` - Frontend API functions
+  - [ ] `api/upload-cloudinary.ts` - Cloudinary serverless function
+  - [ ] `src/services/cloudinaryFileApi.ts` - Frontend API functions
   - [ ] All React components and pages
 
 - [ ] **Build Test:**
@@ -59,7 +63,7 @@
 
 - [ ] **File Uploads Work:**
   - [ ] Try uploading an image in any form
-  - [ ] Check browser network tab for `/api/upload-file` calls
+  - [ ] Check browser network tab for `/api/upload-cloudinary` calls
   - [ ] Verify images appear after upload
   - [ ] No CORS errors in console
   - [ ] Test `/api/test` endpoint for environment variables
@@ -80,8 +84,8 @@
 4. Try redeploying specific function
 
 ### If File Uploads Fail:
-1. Check environment variables in Vercel dashboard
-2. Verify DigitalOcean Spaces credentials
+1. Check Cloudinary environment variables in Vercel dashboard
+2. Verify Cloudinary API credentials
 3. Check function logs for errors
 4. Test with smaller files first
 
@@ -95,9 +99,25 @@
 2. Check that no CommonJS modules are being used
 3. Verify `package.json` has `"type": "module"`
 
+### If Cloudinary Upload Fails:
+1. Verify Cloudinary credentials are correct
+2. Check file size (max 10MB)
+3. Ensure file format is supported (JPG, PNG, GIF, WebP, SVG)
+4. Check Vercel function logs for detailed errors
+
 ## Monitoring
 
 - [ ] Set up Vercel analytics
 - [ ] Monitor function execution times
 - [ ] Check error logs regularly
-- [ ] Monitor file upload success rates 
+- [ ] Monitor file upload success rates
+- [ ] Check Cloudinary dashboard for usage and storage
+- [ ] Monitor bandwidth usage
+
+## Cloudinary Benefits
+
+- ✅ **No CORS issues** - Designed for web uploads
+- ✅ **Free tier** - 25GB storage, 25GB bandwidth/month
+- ✅ **Image optimization** - Automatic compression and format conversion
+- ✅ **Global CDN** - Fast loading worldwide
+- ✅ **Secure URLs** - HTTPS by default 
