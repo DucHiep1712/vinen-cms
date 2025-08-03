@@ -1,141 +1,174 @@
 # Vercel Deployment Guide
 
-## Overview
+## 🚀 Quick Deploy
 
-This guide explains how to deploy the CMS app on Vercel with CORS-free file uploads using Vercel's serverless functions.
-
-## Benefits of Vercel Deployment
-
-- ✅ **No CORS issues** - File uploads go through Vercel's serverless functions
-- ✅ **Automatic HTTPS** - Vercel provides SSL certificates
-- ✅ **Global CDN** - Fast loading worldwide
-- ✅ **Easy deployment** - Connect your GitHub repository
-- ✅ **Environment variables** - Secure configuration management
-
-## Step 1: Prepare Your Repository
-
-Make sure your repository includes:
-- `vercel.json` - Vercel configuration
-- `api/upload-file.ts` - Serverless function for file uploads
-- `package.json` - With Node.js 18.x specified in engines
-- `.nvmrc` - Node.js version specification
-- All frontend files
-
-**Important:** This project requires Node.js 18.x. Make sure your Vercel project is set to use Node.js 18.x in the project settings.
-
-## Step 2: Set Environment Variables in Vercel
-
-In your Vercel dashboard, go to your project settings and add these environment variables:
-
-```env
-DO_SPACES_KEY=your_digitalocean_spaces_key
-DO_SPACES_SECRET=your_digitalocean_spaces_secret
-DO_SPACES_REGION=sgp1
-DO_SPACES_BUCKET=your_bucket_name
-VITE_SUPABASE_URL=https://your-project-ref.supabase.co
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_TINYMCE_API_KEY=your_tinymce_api_key
+### Step 1: Install Vercel CLI
+```bash
+npm install -g vercel
 ```
 
-## Step 3: Deploy to Vercel
-
-### Option A: Using Vercel CLI
+### Step 2: Login to Vercel
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Login to Vercel
 vercel login
+```
 
-# Deploy
+### Step 3: Deploy
+```bash
 vercel --prod
 ```
 
-### Option B: Using GitHub Integration
-1. Connect your GitHub repository to Vercel
-2. Vercel will automatically deploy on every push
-3. Set environment variables in the Vercel dashboard
+## 📋 Pre-Deployment Checklist
 
-## Step 4: Verify Deployment
+- [ ] All API functions are JavaScript (`.js` or `.cjs`)
+- [ ] TypeScript is in `dependencies` (not `devDependencies`)
+- [ ] `@types/node` is in `dependencies`
+- [ ] `package.json` has `"engines": { "node": "18.x" }`
+- [ ] `vercel.json` has correct function references
+- [ ] No duplicate files in `/api` directory
+- [ ] Build passes locally: `npm run build`
 
-After deployment, test the file upload functionality:
-1. Go to your deployed app URL
-2. Try uploading an image in any form
-3. Check that the image appears correctly
+## 🔧 Configuration Files
 
-## File Upload Flow
+### package.json
+```json
+{
+  "engines": {
+    "node": "18.x"
+  },
+  "dependencies": {
+    "typescript": "^5.8.3",
+    "@types/node": "^24.1.0",
+    "@vercel/node": "^5.3.10",
+    "cloudinary": "^2.7.0"
+  }
+}
+```
+
+### vercel.json
+```json
+{
+  "functions": {
+    "api/upload-cloudinary.cjs": {
+      "runtime": "@vercel/node@3.0.0"
+    },
+    "api/test.js": {
+      "runtime": "@vercel/node@3.0.0"
+    },
+    "api/test-upload.js": {
+      "runtime": "@vercel/node@3.0.0"
+    },
+    "api/hello.js": {
+      "runtime": "@vercel/node@3.0.0"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ],
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": null
+}
+```
+
+## 🌍 Environment Variables
+
+Set these in Vercel Dashboard → Settings → Environment Variables:
+
+### Required for Cloudinary
+```
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
+
+### Required for Supabase
+```
+VITE_SUPABASE_PROJECT_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+## 📁 API Directory Structure
 
 ```
-Frontend → Vercel API (/api/upload-file) → DigitalOcean Spaces
+api/
+├── hello.js                    # Basic test function
+├── test.js                     # Environment test function
+├── test-upload.js              # Upload API test function
+└── upload-cloudinary.cjs       # File upload function (CommonJS)
 ```
 
-1. **Frontend** sends file to `/api/upload-file`
-2. **Vercel serverless function** processes the file
-3. **DigitalOcean Spaces** stores the file
-4. **Public URL** is returned to frontend
+## 🔍 Post-Deployment Verification
 
-## Troubleshooting
+### Test API Endpoints
+```bash
+# Test basic API
+curl https://your-app.vercel.app/api/hello
 
-### Common Issues
+# Test environment variables
+curl https://your-app.vercel.app/api/test
 
-1. **Environment Variables Not Set**
-   - Check Vercel dashboard for missing variables
-   - Redeploy after adding variables
+# Test upload setup
+curl https://your-app.vercel.app/api/test-upload
+```
 
-2. **File Upload Fails**
-   - Check Vercel function logs
-   - Verify DigitalOcean credentials
-   - Ensure bucket permissions are correct
+### Check Function Logs
+```bash
+vercel logs --function=api/upload-cloudinary
+```
 
-3. **Build Errors**
-   - Check TypeScript compilation
-   - Verify all dependencies are installed
+## 🚨 Common Issues
 
-4. **Node.js Version Error: "Found invalid Node.js Version: 22.x"**
-   - Ensure Vercel project is set to Node.js 18.x
-   - Check that `package.json` has `"engines": { "node": "18.x" }`
-   - Verify `.nvmrc` file contains `18`
-   - Redeploy after changing Node.js version in Vercel settings
+### Issue: Schema Validation Error
+**Error**: `should NOT have additional property 'nodeVersion'`
+**Solution**: Remove `nodeVersion` from `vercel.json` - use `engines` in `package.json` instead
 
-4. **MIME Type Error: "Expected a JavaScript module script but the server responded with a MIME type of text/html"**
-   - This usually means the API route is not being served correctly
-   - Ensure `vercel.json` has the correct configuration
-   - Check that the API function is in the correct location (`api/upload-file.ts`)
-   - Verify the function exports correctly
-   - Try redeploying the function specifically
+### Issue: TypeScript Module Not Found
+**Error**: `Cannot find module 'typescript'`
+**Solution**: Ensure TypeScript is in `dependencies` (not `devDependencies`)
 
-### Checking Logs
+### Issue: Function Not Found
+**Error**: 404 on API endpoints
+**Solution**: Check that all API files exist and `vercel.json` references correct files
 
-In Vercel dashboard:
-1. Go to your project
-2. Click on "Functions" tab
-3. Check logs for `/api/upload-file`
+## 📝 Notes
 
-## Security Considerations
+1. **Node.js Version**: Specified in `package.json` with `"engines": { "node": "18.x" }`
+2. **JavaScript API Functions**: All API functions use JavaScript to avoid TypeScript compilation issues
+3. **CommonJS Syntax**: All functions use `require()` and `module.exports`
+4. **Environment Variables**: Must be set in Vercel dashboard
+5. **CORS Headers**: All functions include proper CORS configuration
 
-- ✅ **File size limits** - 10MB maximum
-- ✅ **File type validation** - Only allowed MIME types
-- ✅ **Environment variables** - Secure credential storage
-- ✅ **CORS headers** - Properly configured
+## ✅ Success Indicators
 
-## Performance
-
-- **Cold starts** - First request may be slower
-- **File size** - Large files may timeout (10MB limit)
-- **CDN** - Files served from DigitalOcean's global CDN
-
-## Migration from Supabase Edge Functions
-
-If you were using Supabase Edge Functions:
-1. Remove `supabase/functions/upload-file/`
-2. Update frontend to use Vercel API
-3. Set environment variables in Vercel
-4. Deploy and test
-
-## Next Steps
-
-After successful deployment:
-1. Set up custom domain (optional)
-2. Configure analytics
-3. Set up monitoring
-4. Test all functionality thoroughly 
+Your deployment is working if:
+- All test endpoints return 200 status
+- Environment variables are detected correctly
+- Cloudinary can be imported without errors
+- File uploads work successfully
+- No CORS errors in browser console 
