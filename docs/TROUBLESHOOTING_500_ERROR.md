@@ -1,180 +1,154 @@
-# Troubleshooting 500 Upload Error
+# Troubleshooting 500 Errors in Vercel Deployment
 
-## Problem
-Getting "Upload failed with status 500" when trying to upload files after deploying to Vercel.
+## 🚨 Common Issues and Solutions
 
-## Quick Diagnosis Steps
+### 1. TypeScript Module Not Found
+**Error**: `Cannot find module 'typescript'`
 
-### Step 1: Test API Endpoints
-Test these endpoints on your deployed Vercel app:
+**Cause**: TypeScript is in `devDependencies` but Vercel needs it in `dependencies`
 
-1. **Basic API test:**
-   ```bash
-   curl https://your-vercel-app.vercel.app/api/test
-   ```
-
-2. **Upload API test:**
-   ```bash
-   curl https://your-vercel-app.vercel.app/api/test-upload
-   ```
-
-3. **Cloudinary API test:**
-   ```bash
-   curl https://your-vercel-app.vercel.app/api/upload-cloudinary
-   ```
-
-### Step 2: Check Environment Variables in Vercel
-
-1. **Go to Vercel Dashboard**
-2. **Navigate to your project**
-3. **Click "Settings" tab**
-4. **Go to "Environment Variables"**
-5. **Verify these variables are set:**
-
-```env
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+**Solution**:
+```bash
+# Move TypeScript to dependencies in package.json
+# Move @types/node to dependencies in package.json
 ```
 
-### Step 3: Check Vercel Function Logs
-
-1. **Go to Vercel Dashboard**
-2. **Click on your project**
-3. **Go to "Functions" tab**
-4. **Click on `/api/upload-cloudinary`**
-5. **Check the logs for detailed error messages**
-
-## Common Issues and Solutions
-
-### Issue 1: Missing Environment Variables
-**Symptoms:** Logs show "Missing Cloudinary environment variables"
-**Solution:** 
-1. Set all three Cloudinary environment variables in Vercel dashboard
-2. Redeploy the project after adding variables
-
-### Issue 2: Cloudinary Credentials Invalid
-**Symptoms:** S3 upload fails with authentication error
-**Solution:** 
-1. Verify your Cloudinary credentials are correct
-2. Check that the cloud name, API key, and API secret match your Cloudinary dashboard
-3. Ensure the credentials have proper permissions
-
-### Issue 3: Function Not Deployed
-**Symptoms:** 404 error when calling API endpoints
-**Solution:**
-1. Check that all API function files are in the `/api` folder
-2. Verify `vercel.json` includes all functions
-3. Redeploy the project
-
-### Issue 4: Cloudinary Package Not Installed
-**Symptoms:** Import errors in function logs
-**Solution:**
-1. Ensure `cloudinary` package is in `package.json`
-2. Redeploy to install dependencies
-
-### Issue 5: CommonJS Module Error with Cloudinary
-**Symptoms:** "exports is not defined in ES module scope" with Cloudinary
-**Solution:**
-1. The API function now uses dynamic imports to avoid CommonJS issues
-2. Redeploy the project to get the updated function
-3. Check that the `cloudinary` package is properly installed
-
-### Issue 6: Function Timeout
-**Symptoms:** Function times out after 10 seconds
-**Solution:**
-1. Reduce file size (max 10MB)
-2. Check function execution time in Vercel logs
-3. Optimize the upload process
-
-## Step-by-Step Fix
-
-### Step 1: Verify Environment Variables
-1. **Go to Vercel Dashboard → Your Project → Settings → Environment Variables**
-2. **Add/verify these variables:**
-   ```
-   CLOUDINARY_CLOUD_NAME=your_cloud_name
-   CLOUDINARY_API_KEY=your_api_key
-   CLOUDINARY_API_SECRET=your_api_secret
-   ```
-3. **Click "Save"**
-
-### Step 2: Redeploy
-```bash
-vercel --prod
+**Updated package.json**:
+```json
+{
+  "dependencies": {
+    // ... other dependencies
+    "@types/node": "^24.1.0",
+    "typescript": "~5.8.3"
+  },
+  "devDependencies": {
+    // ... other devDependencies
+    // Remove typescript and @types/node from here
+  }
+}
 ```
 
-### Step 3: Test the API
-1. **Test basic endpoint:**
-   ```bash
-   curl https://your-app.vercel.app/api/test-upload
-   ```
-2. **Check response for environment variable status**
+### 2. CommonJS Module Error
+**Error**: `ReferenceError: exports is not defined in ES module scope`
 
-### Step 4: Test File Upload
-1. **Go to your deployed app**
-2. **Try uploading a small image (< 1MB)**
-3. **Check browser network tab for API calls**
-4. **Check Vercel function logs for errors**
+**Cause**: Cloudinary package uses CommonJS syntax in ES module environment
 
-## Debugging Commands
+**Solution**:
+1. Rename upload function to `.cjs` extension
+2. Use CommonJS syntax (`require`, `module.exports`)
+3. Remove duplicate files
 
-### Check Function Status
+**Fixed Files**:
+- `api/upload-cloudinary.cjs` (CommonJS)
+- Removed `api/upload-cloudinary.ts`
+- Removed `api/test.cjs`
+- Removed `api/upload-file.ts`
+
+### 3. Missing Environment Variables
+**Error**: `Cloudinary configuration is incomplete`
+
+**Cause**: Missing Cloudinary environment variables in Vercel
+
+**Solution**:
+1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+2. Add these variables:
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET`
+
+### 4. File Upload Issues
+**Error**: `Upload failed with status 500`
+
+**Cause**: Various issues with file upload processing
+
+**Solution**:
+1. Check Vercel function logs: `vercel logs --function=api/upload-cloudinary`
+2. Verify file size (max 10MB)
+3. Check content-type is `multipart/form-data`
+4. Ensure Cloudinary credentials are correct
+
+### 5. CORS Issues
+**Error**: `Access to fetch at '...' has been blocked by CORS policy`
+
+**Cause**: CORS headers not set properly
+
+**Solution**:
+1. All API functions now include proper CORS headers
+2. Check that `vercel.json` has correct headers configuration
+
+## 🔧 Debugging Steps
+
+### Step 1: Check Function Logs
 ```bash
-# List all functions
-vercel functions ls
-
-# Check function logs
 vercel logs --function=api/upload-cloudinary
 ```
 
-### Test Environment Variables
+### Step 2: Test API Endpoints
 ```bash
-# Test environment variables locally
-node -e "console.log(process.env.CLOUDINARY_CLOUD_NAME)"
+# Test basic API
+curl https://your-app.vercel.app/api/hello
+
+# Test environment variables
+curl https://your-app.vercel.app/api/test
+
+# Test upload setup
+curl https://your-app.vercel.app/api/test-upload
 ```
 
-### Check Deployment Status
+### Step 3: Check Environment Variables
 ```bash
+# In Vercel Dashboard
+Settings → Environment Variables
+```
+
+### Step 4: Verify File Structure
+```
+api/
+├── hello.ts              # Basic test function
+├── test.ts               # Environment test function
+├── test-upload.ts        # Upload API test function
+└── upload-cloudinary.cjs # File upload function (CommonJS)
+```
+
+## 📋 Pre-Deployment Checklist
+
+- [ ] TypeScript is in `dependencies` (not `devDependencies`)
+- [ ] `@types/node` is in `dependencies`
+- [ ] No duplicate files in `/api` directory
+- [ ] `vercel.json` references correct files
+- [ ] Cloudinary environment variables are set
+- [ ] All API functions have proper CORS headers
+- [ ] Build passes locally: `npm run build`
+
+## 🚀 Deployment Commands
+
+```bash
+# Deploy to production
+vercel --prod
+
+# Deploy to preview
+vercel
+
 # Check deployment status
 vercel ls
 
-# Get deployment URL
-vercel inspect
+# View function logs
+vercel logs --function=api/upload-cloudinary
 ```
 
-## Emergency Workaround
+## 📝 Notes
 
-If the issue persists, you can temporarily use mock uploads:
+1. **TypeScript Dependencies**: Vercel serverless functions need TypeScript in `dependencies`
+2. **CommonJS for Cloudinary**: Upload function uses `.cjs` extension
+3. **Environment Variables**: Must be set in Vercel dashboard
+4. **File Conflicts**: Ensure no duplicate files with same name
+5. **CORS Headers**: All functions include proper CORS configuration
 
-1. **Add this environment variable in Vercel:**
-   ```
-   VITE_USE_MOCK_API=true
-   ```
+## ✅ Success Indicators
 
-2. **Redeploy:**
-   ```bash
-   vercel --prod
-   ```
-
-3. **This will use mock uploads** instead of real Cloudinary uploads
-
-## Prevention
-
-To prevent future 500 errors:
-
-1. **Always test locally first** with `vercel dev`
-2. **Set environment variables before deploying**
-3. **Check function logs after deployment**
-4. **Use smaller files for testing**
-5. **Monitor Vercel function execution times**
-
-## Getting Help
-
-If none of the above solutions work:
-
-1. **Collect Vercel function logs**
-2. **Screenshot the error from browser console**
-3. **Document the steps to reproduce**
-4. **Check if the issue is intermittent or consistent**
-5. **Contact Vercel support with logs and error details** 
+Your deployment is working if:
+- All test endpoints return 200 status
+- Environment variables are detected correctly
+- Cloudinary can be imported without errors
+- File uploads work successfully
+- No CORS errors in browser console 
