@@ -73,7 +73,14 @@ CLOUDINARY_API_SECRET=your_api_secret
 1. Ensure `cloudinary` package is in `package.json`
 2. Redeploy to install dependencies
 
-### Issue 5: Function Timeout
+### Issue 5: CommonJS Module Error with Cloudinary
+**Symptoms:** "exports is not defined in ES module scope" with Cloudinary
+**Solution:**
+1. The API function now uses dynamic imports to avoid CommonJS issues
+2. Redeploy the project to get the updated function
+3. Check that the `cloudinary` package is properly installed
+
+### Issue 6: Function Timeout
 **Symptoms:** Function times out after 10 seconds
 **Solution:**
 1. Reduce file size (max 10MB)

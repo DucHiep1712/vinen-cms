@@ -1,12 +1,27 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { v2 as cloudinary } from 'cloudinary';
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// Dynamic import for Cloudinary to avoid CommonJS issues
+let cloudinary: any;
+
+async function initCloudinary() {
+  if (!cloudinary) {
+    try {
+      const cloudinaryModule = await import('cloudinary');
+      cloudinary = cloudinaryModule.v2;
+      
+      // Configure Cloudinary
+      cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+      });
+    } catch (error) {
+      console.error('Failed to import cloudinary:', error);
+      throw error;
+    }
+  }
+  return cloudinary;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log('Cloudinary API function called:', req.method, req.url);
@@ -31,6 +46,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     console.log('Starting Cloudinary upload process');
+    
+    // Initialize Cloudinary
+    const cloudinaryInstance = await initCloudinary();
     
     // Check if request has content-type multipart/form-data
     const contentType = req.headers['content-type'] || '';
@@ -89,7 +107,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Upload to Cloudinary
     const uploadResult = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload(
+      cloudinaryInstance.uploader.upload(
         dataURI,
         {
           folder: stable ? 'stable' : 'uploads',
@@ -100,7 +118,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             { fetch_format: 'auto' }
           ]
         },
-        (error, result) => {
+        (error: any, result: any) => {
           if (error) {
             console.error('Cloudinary upload error:', error);
             reject(error);

@@ -4,6 +4,7 @@
 
 Your CMS app is now configured with:
 - ✅ **Cloudinary** for file uploads (no CORS issues)
+- ✅ **ES Module compatible** - No CommonJS issues
 - ✅ **Mock API fallback** for testing
 - ✅ **Vercel deployment** ready
 - ✅ **All CRUD operations** working
