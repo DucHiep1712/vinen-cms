@@ -3,13 +3,13 @@
     "api/upload-cloudinary.cjs": {
       "runtime": "@vercel/node@3.0.0"
     },
-    "api/test.ts": {
+    "api/test.js": {
       "runtime": "@vercel/node@3.0.0"
     },
-    "api/test-upload.ts": {
+    "api/test-upload.js": {
       "runtime": "@vercel/node@3.0.0"
     },
-    "api/hello.ts": {
+    "api/hello.js": {
       "runtime": "@vercel/node@3.0.0"
     }
   },
@@ -42,5 +42,8 @@
       ]
     }
   ],
-  "installCommand": "npm install --include=dev"
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": null,
+  "nodeVersion": "18.x"
 }

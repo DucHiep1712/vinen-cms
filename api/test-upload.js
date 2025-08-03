@@ -1,6 +1,6 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+const { VercelRequest, VercelResponse } = require('@vercel/node');
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+module.exports = async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Test if we can import cloudinary
     let cloudinaryImport = false;
     try {
-      const { v2: cloudinary } = await import('cloudinary');
+      const { v2: cloudinary } = require('cloudinary');
       cloudinaryImport = true;
     } catch (error) {
       console.error('Cloudinary import failed:', error);
@@ -46,4 +46,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       error: error instanceof Error ? error.message : 'Test failed',
     });
   }
-} 
+}; 
