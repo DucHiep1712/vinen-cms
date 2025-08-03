@@ -90,6 +90,18 @@ The Productivity App is a secure, user-friendly platform designed to help indivi
 - **Search:** Filter content in each section.
 - **Responsive Design:** Mobile & desktop support.
 - **Permissions:** Role-based access for content management.
+- **File Uploads:** CORS-free uploads via Vercel serverless functions.
+
+## Deployment
+
+### Vercel Deployment
+The app is configured for deployment on Vercel with:
+- **Serverless Functions:** File uploads handled by `/api/upload-file`
+- **CORS-Free:** No cross-origin issues
+- **Environment Variables:** Secure configuration management
+- **Global CDN:** Fast loading worldwide
+
+See `docs/VERCEL_DEPLOYMENT.md` for detailed deployment instructions.
 
 ---
 
