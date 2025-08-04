@@ -92,11 +92,12 @@ export async function loginUser(username: string, password: string): Promise<boo
       return false;
     }
 
-    // Create session
+    // Create session with expiration (24 hours)
     const session = {
       userId: user.id,
       username: user.username,
-      loggedInAt: new Date().toISOString()
+      loggedInAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
     };
 
     // Store session in localStorage
@@ -112,14 +113,47 @@ export async function loginUser(username: string, password: string): Promise<boo
 
 // Check if user is logged in
 export function isLoggedIn(): boolean {
-  const session = localStorage.getItem('auth_session');
-  return !!session;
+  try {
+    const session = localStorage.getItem('auth_session');
+    if (!session) return false;
+    
+    const parsedSession = JSON.parse(session);
+    if (!parsedSession || !parsedSession.userId || !parsedSession.username) {
+      return false;
+    }
+
+    // Check if session has expired
+    if (parsedSession.expiresAt) {
+      const expiresAt = new Date(parsedSession.expiresAt);
+      const now = new Date();
+      if (now > expiresAt) {
+        // Session expired, remove it
+        localStorage.removeItem('auth_session');
+        return false;
+      }
+    }
+
+    return true;
+  } catch (error) {
+    // If there's an error parsing the session, remove it and return false
+    localStorage.removeItem('auth_session');
+    return false;
+  }
 }
 
 // Get current user session
 export function getCurrentUser(): any {
-  const session = localStorage.getItem('auth_session');
-  return session ? JSON.parse(session) : null;
+  try {
+    const session = localStorage.getItem('auth_session');
+    if (!session) return null;
+    
+    const parsedSession = JSON.parse(session);
+    return parsedSession && parsedSession.userId && parsedSession.username ? parsedSession : null;
+  } catch (error) {
+    // If there's an error parsing the session, remove it and return null
+    localStorage.removeItem('auth_session');
+    return null;
+  }
 }
 
 // Logout user

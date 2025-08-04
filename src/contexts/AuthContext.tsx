@@ -17,11 +17,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Check if user is logged in on app start
-    if (isLoggedIn()) {
-      const currentUser = getCurrentUser();
-      setUser(currentUser);
-      setIsAuthenticated(true);
-    }
+    const checkAuth = () => {
+      if (isLoggedIn()) {
+        const currentUser = getCurrentUser();
+        if (currentUser) {
+          setUser(currentUser);
+          setIsAuthenticated(true);
+        } else {
+          // Invalid session, clear it
+          logout();
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkAuth();
   }, []);
 
   const handleLogout = () => {

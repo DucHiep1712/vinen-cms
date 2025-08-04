@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 const TABLE = 'products';
 
 export async function getProducts() {
-  const { data, error } = await supabase.from(TABLE).select('*').order('created_at', { ascending: false });
+  const { data, error } = await supabase.from(TABLE).select('*').order('id', { ascending: false });
   if (error) throw error;
   return data || [];
 }
@@ -32,4 +32,3 @@ export async function deleteProduct(id: number) {
   return true;
 }
 
- 
