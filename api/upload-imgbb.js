@@ -96,10 +96,9 @@ module.exports = async (req, res) => {
     // Upload to ImgBB
     const formData = new FormData();
     formData.append('image', base64Content);
-    formData.append('key', imgbbApiKey);
     formData.append('name', filename || 'upload');
 
-    const imgbbResponse = await fetch('https://api.imgbb.com/1/upload', {
+    const imgbbResponse = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
       method: 'POST',
       body: formData
     });
