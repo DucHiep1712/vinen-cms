@@ -5,9 +5,9 @@ import { Button } from './button';
 
 const navItems = [
   // { name: 'Dashboard', path: '/dashboard' },
-  { name: 'Events', path: '/events' },
-  { name: 'News', path: '/news' },
-  { name: 'Products', path: '/products' },
+  { name: 'Sự kiện', path: '/events' },
+  { name: 'Tin tức', path: '/news' },
+  { name: 'Sản phẩm', path: '/products' },
 ];
 
 export default function Navbar() {

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { PlusIcon, Trash2 } from 'lucide-react';
+import { PlusIcon, Trash2, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getProducts, deleteProduct } from '../../services/productsApi';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -23,6 +24,7 @@ import {
   PaginationPrevious,
   PaginationNext,
 } from '@/components/ui/pagination';
+import { Input } from '@/components/ui/input';
 
 const commonHeaderClass = 'bg-muted/60 text-muted-foreground/60 uppercase text-xs border border-muted-foreground/60 py-2 text-left font-medium';
 
@@ -112,9 +114,15 @@ const ProductsTable: React.FC = () => {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [openDialogId, setOpenDialogId] = useState<number | null>(null);
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
   const rowsPerPage = 6;
-  const totalPages = Math.ceil(products.length / rowsPerPage);
-  const paginatedProducts = products.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  
+  // Filter products based on search
+  const filteredProducts = products.filter(product =>
+    product.title.toLowerCase().includes(search.toLowerCase())
+  );
+  const totalPages = Math.ceil(filteredProducts.length / rowsPerPage);
+  const paginatedProducts = filteredProducts.slice((page - 1) * rowsPerPage, page * rowsPerPage);
   const emptyRows = rowsPerPage - paginatedProducts.length;
 
   // Placeholder: Replace with real API call
@@ -152,18 +160,38 @@ const ProductsTable: React.FC = () => {
 
   return (
     <div className="relative flex flex-col items-center gap-4 p-8 flex-1 h-[calc(100vh-80px)]">
-      <Link
-        to="/products/new"
-        className="absolute bottom-8 right-8"
-      >
-        <Button size="icon" variant="default" className="rounded-full size-12 cursor-pointer">
-          <PlusIcon className="size-6" />
-        </Button>
-      </Link>
-      <div className="w-7xl mx-auto flex items-center justify-between mb-3">
-        <h1 className="text-2xl font-bold">Sản phẩm</h1>
-        {/* Optionally add a search box here in the future for consistency */}
-      </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link
+            to="/products/new"
+            className="absolute bottom-8 right-8"
+          >
+            <Button size="icon" variant="default" className="rounded-full size-12 cursor-pointer">
+              <PlusIcon className="size-6" />
+            </Button>
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent><p>Thêm mới sản phẩm</p></TooltipContent>
+      </Tooltip>
+              <div className="w-full flex items-center justify-between mb-2">
+          <div className="w-7xl mx-auto flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Sản phẩm</h1>
+            <div className="relative w-80">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                <Search className="w-5 h-5" />
+              </span>
+              <Input
+                placeholder="Tìm kiếm sản phẩm..."
+                value={search}
+                onChange={e => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="pl-10"
+              />
+            </div>
+          </div>
+        </div>
       <div className="flex flex-col items-center gap-4">
         <div className="overflow-x-auto rounded-lg bg-background w-7xl relative z-0">
           <table className="min-w-full text-sm">
