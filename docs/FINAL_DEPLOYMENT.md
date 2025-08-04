@@ -1,11 +1,11 @@
-# Final Deployment Guide
+g# Final Deployment Guide
 
 ## ✅ App is Ready for Production!
 
 Your CMS app is now configured with:
 - ✅ **Cloudinary** for file uploads (no CORS issues)
 - ✅ **ES Module compatible** - No CommonJS issues
-- ✅ **Mock API fallback** for testing
+- ✅ **ImgBB integration** for file uploads
 - ✅ **Vercel deployment** ready
 - ✅ **All CRUD operations** working
 
@@ -65,34 +65,26 @@ Your CMS app is now configured with:
    - Go to Vercel Dashboard → Functions → `/api/upload-cloudinary`
    - Look for detailed error messages
 
-### If You Need Mock Uploads Temporarily:
 
-Add this environment variable in Vercel:
-```env
-VITE_USE_MOCK_API=true
-```
-
-This will use mock uploads instead of real Cloudinary uploads.
 
 ## 📁 Project Structure
 
 ```
 viNen-cms/
 ├── api/
-│   ├── upload-cloudinary.ts    # Real file uploads
-│   ├── test.ts                 # Basic API test
-│   └── test-upload.ts          # Upload API test
+│   ├── upload-imgbb.js         # ImgBB file uploads
+│   ├── test.js                 # Basic API test
+│   └── test-upload.js          # Upload API test
 ├── src/
 │   ├── services/
-│   │   ├── cloudinaryFileApi.ts # Cloudinary API functions
-│   │   ├── mockFileApi.ts       # Mock upload functions
-│   │   └── fileApi.ts           # Main file API (switches between real/mock)
+│   │   ├── imgbbFileApi.ts     # ImgBB API functions
+│   │   └── fileApi.ts          # Main file API
 │   └── features/
 │       ├── events/              # Events management
 │       ├── news/                # News management
 │       └── products/            # Products management
 ├── docs/
-│   ├── CLOUDINARY_SETUP.md      # Cloudinary setup guide
+│   ├── IMGBB_SETUP.md           # ImgBB setup guide
 │   ├── LOCAL_DEVELOPMENT.md     # Local testing guide
 │   └── TROUBLESHOOTING_500_ERROR.md # Error troubleshooting
 └── vercel.json                  # Vercel configuration
@@ -101,7 +93,7 @@ viNen-cms/
 ## 🎯 Features Working
 
 - ✅ **Authentication** - Username/password login
-- ✅ **File Uploads** - Images to Cloudinary CDN
+- ✅ **File Uploads** - Images to ImgBB CDN
 - ✅ **Rich Text Editor** - TinyMCE integration
 - ✅ **CRUD Operations** - Create, read, update, delete
 - ✅ **Search & Pagination** - Filter and browse content
@@ -110,7 +102,7 @@ viNen-cms/
 
 ## 💰 Costs
 
-- **Cloudinary**: Free tier (25GB storage, 25GB bandwidth/month)
+- **ImgBB**: Free tier (32MB per image, no bandwidth limits)
 - **Vercel**: Free tier (generous limits)
 - **Supabase**: Free tier (generous limits)
 - **TinyMCE**: Free tier available
@@ -119,12 +111,12 @@ viNen-cms/
 
 1. **Local Development:**
    ```bash
-   npm run dev  # Uses mock uploads
+   npm run dev  # Uses ImgBB uploads
    ```
 
 2. **Test with Real API:**
    ```bash
-   vercel dev  # Uses real Cloudinary uploads
+   vercel dev  # Uses ImgBB uploads
    ```
 
 3. **Deploy:**
@@ -139,12 +131,12 @@ If you encounter issues:
 1. **Check the troubleshooting guides** in the `docs/` folder
 2. **Test API endpoints** using the provided curl commands
 3. **Check Vercel function logs** for detailed error messages
-4. **Use mock uploads** temporarily if needed
+4. **Check ImgBB API key** if uploads fail
 
 ## 🎉 Success!
 
 Your CMS app is now ready for production use with:
-- Reliable file uploads via Cloudinary
+- Reliable file uploads via ImgBB
 - No CORS issues
 - Full CRUD functionality
 - Professional UI/UX

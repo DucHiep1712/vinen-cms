@@ -12,8 +12,7 @@
     "type-check": "tsc -b",
     "lint": "eslint .",
     "preview": "vite preview",
-    "seed:events": "npx tsx src/scripts/seedEvents.ts",
-    "seed:products": "npx tsx src/scripts/seedProducts.ts",
+
     "setup:users": "node scripts/setup-users-table.js"
   },
   "dependencies": {
