@@ -252,6 +252,8 @@ const EventForm: React.FC = () => {
     }
   };
 
+
+
   return (
     <div className="min-h-fit w-full bg-background p-0 m-0 overflow-auto flex flex-col">
       <Toaster position="top-center" />
@@ -337,6 +339,8 @@ const EventForm: React.FC = () => {
                 content_style:
                   'body { font-family: TikTok Sans, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif; font-size:16px }',
                 language: 'vi',
+                images_upload_url: '/api/upload-imgbb',
+                automatic_uploads: true,
                 images_upload_handler: async (
                   blobInfo: any,
                   success: (url: string) => void,
