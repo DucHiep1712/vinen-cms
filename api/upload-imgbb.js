@@ -133,8 +133,9 @@ export default async function handler(req, res) {
 
     console.log('Upload completed successfully');
     return res.status(200).json({
+      location: imgbbResult.data.url, // for TinyMCE default image upload
+      url: imgbbResult.data.url,      // for custom handler
       success: true,
-      url: imgbbResult.data.url,
       filename: imgbbResult.data.title,
       size: file.size,
       type: mimeType,
