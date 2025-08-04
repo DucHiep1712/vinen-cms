@@ -25,27 +25,17 @@ module.exports = async function handler(req, res) {
     console.log('Starting Cloudinary upload process');
     
     // Check environment variables first
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-    const apiKey = process.env.CLOUDINARY_API_KEY;
-    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+    const cloudinaryUrl = process.env.CLOUDINARY_URL;
 
     console.log('Environment variables check:', {
-      hasCloudName: !!cloudName,
-      hasApiKey: !!apiKey,
-      hasApiSecret: !!apiSecret,
-      cloudName: cloudName
+      hasCloudinaryUrl: !!cloudinaryUrl
     });
 
-    if (!cloudName || !apiKey || !apiSecret) {
-      console.error('Missing Cloudinary environment variables');
+    if (!cloudinaryUrl) {
+      console.error('Missing CLOUDINARY_URL environment variable');
       return res.status(500).json({ 
         success: false, 
-        error: 'Cloudinary configuration is incomplete',
-        missing: {
-          cloudName: !cloudName,
-          apiKey: !apiKey,
-          apiSecret: !apiSecret
-        }
+        error: 'Cloudinary configuration is incomplete. Please set CLOUDINARY_URL environment variable.'
       });
     }
 
@@ -77,11 +67,9 @@ module.exports = async function handler(req, res) {
     console.log('Initializing Cloudinary...');
     const cloudinary = require('cloudinary').v2;
     
-    // Configure Cloudinary
+    // Configure Cloudinary using the URL format
     cloudinary.config({
-      cloud_name: cloudName,
-      api_key: apiKey,
-      api_secret: apiSecret,
+      url: cloudinaryUrl
     });
 
     console.log('Uploading to Cloudinary...');
