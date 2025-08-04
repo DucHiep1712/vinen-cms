@@ -123,7 +123,7 @@ api/
 ├── hello.js                    # Basic test function
 ├── test.js                     # Environment test function
 ├── test-upload.js              # Upload API test function
-└── upload-imgbb.js             # File upload function (ImgBB)
+└── upload-imgbb.cjs            # File upload function (ImgBB)
 ```
 
 ## 🔍 Post-Deployment Verification

@@ -32,7 +32,7 @@ The API function uses the ImgBB API to upload images. This is a simple, free ima
 
 ```
 api/
-└── upload-imgbb.js    # Uses IMGBB_API_KEY environment variable
+└── upload-imgbb.cjs   # Uses IMGBB_API_KEY environment variable
 ```
 
 ## ✅ Benefits

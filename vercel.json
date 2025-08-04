@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/upload-imgbb.js": {
+    "api/upload-imgbb.cjs": {
       "runtime": "@vercel/node@3.0.0"
     },
     "api/test.js": {
