@@ -341,25 +341,25 @@ const EventForm: React.FC = () => {
                 language: 'vi',
                 images_upload_url: '/api/upload-imgbb',
                 automatic_uploads: true,
-                images_upload_handler: async (
-                  blobInfo: any,
-                  success: (url: string) => void,
-                  failure: (err: string) => void
-                ) => {
-                  try {
-                    const blob = blobInfo.blob();
-                    const filename = blobInfo.filename() || `editor-image-${Date.now()}.png`;
-                    const url = await uploadBlobToCloud(blob, filename, false);
-                    if (url) {
-                      success(url);
+                images_upload_handler: function (blobInfo: any, success: any, failure: any) {
+                  const formData = new FormData();
+                  formData.append('file', blobInfo.blob(), blobInfo.filename());
+                  
+                  fetch('/api/upload-imgbb', {
+                    method: 'POST',
+                    body: formData
+                  })
+                  .then(response => response.json())
+                  .then(result => {
+                    if (result.success && result.location) {
+                      success(result.location);
                     } else {
-                      toast.error('Không thể tải ảnh lên cloud storage.');
-                      failure('Không thể tải ảnh lên cloud storage.');
+                      failure(result.error || 'Upload failed');
                     }
-                  } catch (err) {
-                    toast.error('Lỗi khi tải ảnh lên cloud storage.');
-                    failure('Lỗi khi tải ảnh lên cloud storage.');
-                  }
+                  })
+                  .catch(error => {
+                    failure('Upload failed: ' + error.message);
+                  });
                 },
               }}
               onEditorChange={content => setForm((prev: typeof form) => ({ ...prev, description: content }))}

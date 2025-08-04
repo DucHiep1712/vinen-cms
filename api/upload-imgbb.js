@@ -19,7 +19,17 @@ async function parseMultipartFormData(req) {
         return;
       }
 
-      const file = files.file;
+      // TinyMCE might send the file as 'file' or 'blobid' + index
+      let file = files.file || files.blobid0 || files.image;
+      
+      // Check all possible file fields if the above don't exist
+      if (!file) {
+        const fileKeys = Object.keys(files);
+        if (fileKeys.length > 0) {
+          file = files[fileKeys[0]];
+        }
+      }
+
       if (!file) {
         reject(new Error('No file provided'));
         return;
@@ -82,6 +92,8 @@ export default async function handler(req, res) {
 
     // Parse the multipart form data
     console.log('Parsing multipart form data...');
+    console.log('Request headers:', req.headers);
+    
     const { file, filename, mimeType, stable } = await parseMultipartFormData(req);
     
     console.log('File info:', {
@@ -133,9 +145,8 @@ export default async function handler(req, res) {
 
     console.log('Upload completed successfully');
     return res.status(200).json({
-      location: imgbbResult.data.url, // for TinyMCE default image upload
-      url: imgbbResult.data.url,      // for custom handler
       success: true,
+      url: imgbbResult.data.url,
       filename: imgbbResult.data.title,
       size: file.size,
       type: mimeType,
