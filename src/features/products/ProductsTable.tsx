@@ -116,7 +116,7 @@ const ProductsTable: React.FC = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const rowsPerPage = 6;
-  
+
   // Filter products based on search
   const filteredProducts = products.filter(product =>
     product.title.toLowerCase().includes(search.toLowerCase())
@@ -164,7 +164,7 @@ const ProductsTable: React.FC = () => {
         <TooltipTrigger asChild>
           <Link
             to="/products/new"
-            className="absolute bottom-8 right-8"
+            className="fixed bottom-8 right-8"
           >
             <Button size="icon" variant="default" className="rounded-full size-12 cursor-pointer">
               <PlusIcon className="size-6" />
@@ -173,25 +173,25 @@ const ProductsTable: React.FC = () => {
         </TooltipTrigger>
         <TooltipContent><p>Thêm mới sản phẩm</p></TooltipContent>
       </Tooltip>
-              <div className="w-full flex items-center justify-between mb-2">
-          <div className="w-7xl mx-auto flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Sản phẩm</h1>
-            <div className="relative w-80">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                <Search className="w-5 h-5" />
-              </span>
-              <Input
-                placeholder="Tìm kiếm sản phẩm..."
-                value={search}
-                onChange={e => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-                className="pl-10"
-              />
-            </div>
+      <div className="w-full flex items-center justify-between mb-2">
+        <div className="w-7xl mx-auto flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Sản phẩm</h1>
+          <div className="relative w-80">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              <Search className="w-5 h-5" />
+            </span>
+            <Input
+              placeholder="Tìm kiếm sản phẩm..."
+              value={search}
+              onChange={e => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-10"
+            />
           </div>
         </div>
+      </div>
       <div className="flex flex-col items-center gap-4">
         <div className="overflow-x-auto rounded-lg bg-background w-7xl relative z-0">
           <table className="min-w-full text-sm">
