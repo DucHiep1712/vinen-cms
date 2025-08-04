@@ -15,20 +15,18 @@ module.exports = async function handler(req, res) {
   try {
     // Check environment variables
     const envCheck = {
-      CLOUDINARY_CLOUD_NAME: !!process.env.CLOUDINARY_CLOUD_NAME,
-      CLOUDINARY_API_KEY: !!process.env.CLOUDINARY_API_KEY,
-      CLOUDINARY_API_SECRET: !!process.env.CLOUDINARY_API_SECRET,
+      IMGBB_API_KEY: !!process.env.IMGBB_API_KEY,
       NODE_ENV: process.env.NODE_ENV,
       VERCEL_ENV: process.env.VERCEL_ENV,
     };
 
-    // Test if we can import cloudinary
-    let cloudinaryImport = false;
+    // Test if we can import formidable
+    let formidableImport = false;
     try {
-      const { v2: cloudinary } = require('cloudinary');
-      cloudinaryImport = true;
+      const formidable = require('formidable');
+      formidableImport = true;
     } catch (error) {
-      console.error('Cloudinary import failed:', error);
+      console.error('Formidable import failed:', error);
     }
 
     return res.status(200).json({
@@ -36,7 +34,7 @@ module.exports = async function handler(req, res) {
       message: 'Upload test endpoint is working',
       timestamp: new Date().toISOString(),
       environment: envCheck,
-      cloudinaryImport,
+      formidableImport,
       note: 'This endpoint tests if the upload API can be reached and configured'
     });
   } catch (error) {

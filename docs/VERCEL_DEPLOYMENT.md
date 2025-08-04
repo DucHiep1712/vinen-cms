@@ -39,7 +39,7 @@ vercel --prod
     "typescript": "^5.8.3",
     "@types/node": "^24.1.0",
     "@vercel/node": "^5.3.10",
-    "cloudinary": "^2.7.0"
+    "formidable": "^3.5.1"
   }
 }
 ```
@@ -100,14 +100,14 @@ vercel --prod
 
 Set these in Vercel Dashboard → Settings → Environment Variables:
 
-### Required for Cloudinary
+### Required for ImgBB
 ```
-CLOUDINARY_URL=cloudinary://<your_api_key>:<your_api_secret>@<your_cloud_name>
+IMGBB_API_KEY=your_api_key_here
 ```
 
 **Example:**
 ```
-CLOUDINARY_URL=cloudinary://123456789012345:abcdefghijklmnop@dwut3psxb
+IMGBB_API_KEY=1234567890abcdef1234567890abcdef
 ```
 
 ### Required for Supabase
@@ -123,7 +123,7 @@ api/
 ├── hello.js                    # Basic test function
 ├── test.js                     # Environment test function
 ├── test-upload.js              # Upload API test function
-└── upload-cloudinary.cjs       # File upload function (CommonJS)
+└── upload-imgbb.js             # File upload function (ImgBB)
 ```
 
 ## 🔍 Post-Deployment Verification
@@ -142,7 +142,7 @@ curl https://your-app.vercel.app/api/test-upload
 
 ### Check Function Logs
 ```bash
-vercel logs --function=api/upload-cloudinary
+vercel logs --function=api/upload-imgbb
 ```
 
 ## 🚨 Common Issues
@@ -172,6 +172,6 @@ vercel logs --function=api/upload-cloudinary
 Your deployment is working if:
 - All test endpoints return 200 status
 - Environment variables are detected correctly
-- Cloudinary can be imported without errors
+- ImgBB can be imported without errors
 - File uploads work successfully
 - No CORS errors in browser console 

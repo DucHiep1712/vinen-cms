@@ -240,7 +240,7 @@ async function saveToCloudFallback(filename: string, content: ArrayBuffer, stabl
 }
 
 // Import proxy functions
-import { uploadFileWithCloudinary, uploadBlobWithCloudinary } from './cloudinaryFileApi';
+import { uploadFileWithImgBB, uploadBlobWithImgBB } from './imgbbFileApi';
 import { uploadFileWithMock, uploadBlobWithMock } from './mockFileApi';
 
 // Switch between mock and real API based on environment
@@ -255,7 +255,7 @@ export async function saveToCloud(filename: string, content: ArrayBuffer, stable
     if (USE_MOCK_API) {
       return await uploadBlobWithMock(blob, filename, stable);
     } else {
-      return await uploadBlobWithCloudinary(blob, filename, stable);
+      return await uploadBlobWithImgBB(blob, filename, stable);
     }
   } catch (error) {
     console.error('Upload failed, falling back to direct upload:', error);
@@ -369,7 +369,7 @@ export async function uploadFileFromInput(file: File, stable: boolean = false): 
       if (USE_MOCK_API) {
         return await uploadFileWithMock(file, stable);
       } else {
-        return await uploadFileWithCloudinary(file, stable);
+        return await uploadFileWithImgBB(file, stable);
       }
     } catch (error) {
     console.error('Upload file failed:', error);
@@ -396,7 +396,7 @@ export async function uploadBlobToCloud(blob: Blob, filename: string, stable: bo
       // Use proxy upload for blobs
     const url = USE_MOCK_API 
       ? await uploadBlobWithMock(blob, filename, stable)
-      : await uploadBlobWithCloudinary(blob, filename, stable);
+              : await uploadBlobWithImgBB(blob, filename, stable);
   if (url) {
     blobUploadCache.set(hash, url);
   }
