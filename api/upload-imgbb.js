@@ -1,4 +1,5 @@
-const formidable = require('formidable');
+import formidable from 'formidable';
+import fs from 'fs';
 
 // Parse multipart form data
 async function parseMultipartFormData(req) {
@@ -24,17 +25,27 @@ async function parseMultipartFormData(req) {
         return;
       }
 
+      // Handle both single file and array of files
+      const fileData = Array.isArray(file) ? file[0] : file;
+
       resolve({
-        file: file[0],
-        filename: file[0].originalFilename,
-        mimeType: file[0].mimetype,
-        stable: fields.stable === 'true'
+        file: fileData,
+        filename: fileData.originalFilename,
+        mimeType: fileData.mimetype,
+        stable: Array.isArray(fields.stable) ? fields.stable[0] === 'true' : fields.stable === 'true'
       });
     });
   });
 }
 
-module.exports = async (req, res) => {
+// Disable body parsing for file uploads
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -87,7 +98,6 @@ module.exports = async (req, res) => {
     }
 
     // Read file content
-    const fs = require('fs');
     const fileContent = fs.readFileSync(file.filepath);
     const base64Content = fileContent.toString('base64');
 
@@ -144,4 +154,4 @@ module.exports = async (req, res) => {
       error: error.message || 'Upload failed'
     });
   }
-}; 
+}
