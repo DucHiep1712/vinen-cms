@@ -1,5 +1,7 @@
 import formidable from 'formidable';
 import fs from 'fs';
+import https from 'https';
+import querystring from 'querystring';
 
 // Parse multipart form data
 async function parseMultipartFormData(req) {
@@ -45,6 +47,35 @@ async function parseMultipartFormData(req) {
         stable: Array.isArray(fields.stable) ? fields.stable[0] === 'true' : fields.stable === 'true'
       });
     });
+  });
+}
+
+// Helper function to make HTTPS request
+function makeHttpsRequest(url, options) {
+  return new Promise((resolve, reject) => {
+    const req = https.request(url, options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      res.on('end', () => {
+        try {
+          const jsonData = JSON.parse(data);
+          resolve({ status: res.statusCode, data: jsonData });
+        } catch (error) {
+          resolve({ status: res.statusCode, data: data });
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(error);
+    });
+
+    if (options.body) {
+      req.write(options.body);
+    }
+    req.end();
   });
 }
 
@@ -115,23 +146,27 @@ export default async function handler(req, res) {
 
     console.log('Uploading to ImgBB...');
     
-    // Upload to ImgBB
-    const formData = new FormData();
-    formData.append('image', base64Content);
-    formData.append('name', filename || 'upload');
-
-    const imgbbResponse = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
-      method: 'POST',
-      body: formData
+    // Upload to ImgBB using https module
+    const postData = querystring.stringify({
+      image: base64Content,
+      name: filename || 'upload'
     });
 
-    if (!imgbbResponse.ok) {
-      const errorText = await imgbbResponse.text();
-      console.error('ImgBB upload error:', errorText);
-      throw new Error(`ImgBB upload failed: ${imgbbResponse.status} ${errorText}`);
+    const imgbbResponse = await makeHttpsRequest(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData)
+      },
+      body: postData
+    });
+
+    if (imgbbResponse.status !== 200) {
+      console.error('ImgBB upload error:', imgbbResponse.data);
+      throw new Error(`ImgBB upload failed: ${imgbbResponse.status} ${JSON.stringify(imgbbResponse.data)}`);
     }
 
-    const imgbbResult = await imgbbResponse.json();
+    const imgbbResult = imgbbResponse.data;
 
     if (!imgbbResult.success) {
       console.error('ImgBB API error:', imgbbResult.error);

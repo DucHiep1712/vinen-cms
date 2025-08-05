@@ -339,28 +339,45 @@ const EventForm: React.FC = () => {
                 content_style:
                   'body { font-family: TikTok Sans, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif; font-size:16px }',
                 language: 'vi',
-                images_upload_url: '/api/upload-imgbb',
-                automatic_uploads: true,
-                images_upload_handler: function (blobInfo: any, success: any, failure: any) {
+                images_upload_handler: (blobInfo: any, progress: any) => new Promise((resolve, reject) => {
+                  const xhr = new XMLHttpRequest();
+                  xhr.withCredentials = false;
+                  xhr.open('POST', '/api/upload-imgbb');
+
+                  xhr.upload.onprogress = (e) => {
+                    progress(e.loaded / e.total * 100);
+                  };
+
+                  xhr.onload = () => {
+                    if (xhr.status === 403) {
+                      reject({ message: 'HTTP Error: ' + xhr.status, remove: true });
+                      return;
+                    }
+
+                    if (xhr.status < 200 || xhr.status >= 300) {
+                      reject('HTTP Error: ' + xhr.status);
+                      return;
+                    }
+
+                    const json = JSON.parse(xhr.responseText);
+
+                    if (!json || typeof json.location != 'string') {
+                      reject('Invalid JSON: ' + xhr.responseText);
+                      return;
+                    }
+
+                    resolve(json.location);
+                  };
+
+                  xhr.onerror = () => {
+                    reject('Image upload failed due to a XHR Transport error. Code: ' + xhr.status);
+                  };
+
                   const formData = new FormData();
                   formData.append('file', blobInfo.blob(), blobInfo.filename());
-                  
-                  fetch('/api/upload-imgbb', {
-                    method: 'POST',
-                    body: formData
-                  })
-                  .then(response => response.json())
-                  .then(result => {
-                    if (result.success && result.location) {
-                      success(result.location);
-                    } else {
-                      failure(result.error || 'Upload failed');
-                    }
-                  })
-                  .catch(error => {
-                    failure('Upload failed: ' + error.message);
-                  });
-                },
+
+                  xhr.send(formData);
+                }),
               }}
               onEditorChange={content => setForm((prev: typeof form) => ({ ...prev, description: content }))}
             />
