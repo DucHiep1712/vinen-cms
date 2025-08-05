@@ -19,7 +19,11 @@ function AppRoutes() {
 
   // Protected Route Component (moved inside AppRoutes to access AuthProvider)
   function ProtectedRoute({ children }: { children: React.ReactNode }) {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, isLoading } = useAuth();
+    
+    if (isLoading) {
+      return <div className="flex items-center justify-center min-h-screen">Đang tải...</div>;
+    }
     
     if (!isAuthenticated) {
       return <Navigate to="/auth" replace />;
