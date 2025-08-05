@@ -11,6 +11,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '../../components/ui/too
 import { Copy, ArrowLeft } from 'lucide-react';
 import { isEqual } from 'lodash';
 import { uploadFileFromInput } from '../../services/fileApi';
+import { TagsInput, TagsInputLabel, TagsInputList, TagsInputItem, TagsInputInput, TagsInputClear } from '../../components/ui/tags-input';
 
 const defaultProduct = {
   title: '',
@@ -85,6 +86,8 @@ const ProductsForm: React.FC = () => {
     org_type: false,
     product_of_interest: false,
   });
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [initialTags, setInitialTags] = useState<string[]>([]);
   const navigate = useNavigate();
   const { id } = useParams();
   const editorRef = useRef<any>(null);
@@ -94,8 +97,36 @@ const ProductsForm: React.FC = () => {
       setLoading(true);
       getProductById(Number(id))
         .then(data => {
-          setForm({ ...data });
-          setInitialForm({ ...data });
+          console.log('Raw tags from DB:', data.tags);
+          console.log('Type of tags:', typeof data.tags);
+          
+          // Parse tags from JSON string if it's a string, otherwise use as is
+          const parseTags = (tags: any) => {
+            if (typeof tags === 'string') {
+              try {
+                return JSON.parse(tags);
+              } catch (error) {
+                console.error('Error parsing tags:', error);
+                return [];
+              }
+            }
+            return Array.isArray(tags) ? tags : [];
+          };
+          
+          const parsedTags = parseTags(data.tags);
+          console.log('Parsed tags:', parsedTags);
+          
+          setForm({ 
+            ...data,
+            tags: parsedTags,
+          });
+          setInitialForm({ 
+            ...data,
+            tags: parsedTags,
+          });
+          setSelectedTags(parsedTags);
+          setInitialTags(parsedTags);
+          
           // Parse form_fields if it exists
           if (data.form_fields) {
             try {
@@ -200,7 +231,7 @@ const ProductsForm: React.FC = () => {
     }
   };
 
-  const isFormChanged = !isEqual(form, initialForm) || !isEqual(checkboxState, JSON.parse(form.form_fields || '{"name": "false", "phone_number": "false", "address": "false", "org_type": "false", "product_of_interest": "false"}'));
+  const isFormChanged = !isEqual(form, initialForm) || !isEqual(checkboxState, JSON.parse(form.form_fields || '{"name": "false", "phone_number": "false", "address": "false", "org_type": "false", "product_of_interest": "false"}')) || !isEqual(selectedTags, initialTags);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -218,6 +249,7 @@ const ProductsForm: React.FC = () => {
       ...form,
       price: form.price === '' ? 0 : Number(form.price),
       form_fields: formFieldsJson,
+      tags: JSON.stringify(selectedTags), // Convert array to JSON string for database storage
     };
     
     try {
@@ -300,6 +332,40 @@ const ProductsForm: React.FC = () => {
             {form.image && !imageError && (
               <img src={form.image} alt="Preview" className="mt-2 rounded max-h-40 object-contain border" />
             )}
+          </div>
+          <div className="flex flex-col gap-8">
+            <div>
+              <TagsInput
+                value={selectedTags}
+                onValueChange={setSelectedTags}
+                className="flex w-full flex-col"
+                editable
+              >
+                <TagsInputLabel className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Thẻ sản phẩm
+                </TagsInputLabel>
+                <TagsInputList className="flex mt-1 min-h-10 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-3 focus-within:ring-ring/60 disabled:cursor-not-allowed disabled:opacity-50">
+                  {selectedTags.map((tag: string) => (
+                    <TagsInputItem
+                      key={tag}
+                      value={tag}
+                      className="inline-flex max-w-[calc(100%-8px)] items-center gap-1.5 rounded-md border bg-secondary px-2.5 py-1 text-sm font-medium text-secondary-foreground shadow-sm hover:bg-secondary/80"
+                    >
+                      {tag}
+                    </TagsInputItem>
+                  ))}
+                  <TagsInputInput
+                    placeholder="Thêm thẻ..."
+                    className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </TagsInputList>
+                {selectedTags.length > 0 && (
+                  <TagsInputClear className="flex mt-2 h-8 items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-1 text-sm font-medium text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground cursor-pointer">
+                    Xóa tất cả
+                  </TagsInputClear>
+                )}
+              </TagsInput>
+            </div>
           </div>
           <div className="md:col-span-2">
             <div className="w-full flex justify-between items-center">

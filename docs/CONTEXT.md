@@ -165,14 +165,7 @@ See `docs/VERCEL_DEPLOYMENT.md` for detailed deployment instructions.
 - description: text (not null)
 - view_count: integer (default: 0)
 - is_hot: boolean (default: false)
-
-### news_tag_enum
-- id: integer (PK)
-- label: text (not null)
-
-### news_tags
-- news_id: integer (PK, FK → news.id)
-- tag_id: integer (PK, FK → news_tag_enum.id)
+- tags: text (JSON array of tag strings)
 
 ### products
 - id: bigint (PK, identity)
@@ -180,24 +173,16 @@ See `docs/VERCEL_DEPLOYMENT.md` for detailed deployment instructions.
 - title: text (not null)
 - price: double precision
 - description: text (not null)
-
-### product_tag_enum
-- id: integer (PK)
-- label: text (not null)
-
-### products_tags
-- product_id: bigint (PK, FK → products.id)
-- tag_id: bigint (PK, FK → product_tag_enum.id)
+- form_fields: text (JSON object for customer form fields)
+- tags: text (JSON array of tag strings)
 
 ### status_enum
 - id: integer (PK)
 - label: text (not null)
 
-#### Relationships
-- `news_tags.news_id` → `news.id`
-- `news_tags.tag_id` → `news_tag_enum.id`
-- `products_tags.product_id` → `products.id`
-- `products_tags.tag_id` → `product_tag_enum.id`
+#### Notes
+- **Tags Storage**: Tags for both news and products are now stored as JSON arrays in the respective `tags` columns, allowing for flexible tag management without requiring separate junction tables.
+- **Form Fields**: The products table includes a `form_fields` column to store customer information requirements as a JSON object.
 
 ---
 

@@ -5,13 +5,13 @@ import { Button } from '../../components/ui/button';
 import { Label } from '../../components/ui/label';
 import { Editor } from '@tinymce/tinymce-react';
 import toast, { Toaster } from 'react-hot-toast';
-import { getNewsById, createNews, updateNews, getTagsForNews, updateNewsTags } from '../../services/newsApi';
+import { getNewsById, createNews, updateNews } from '../../services/newsApi';
 import { Tooltip, TooltipTrigger, TooltipContent } from '../../components/ui/tooltip';
 import { Copy, ArrowLeft } from 'lucide-react';
 import { isEqual } from 'lodash';
-import { Button as ShadcnButton } from '../../components/ui/button';
 import { Switch } from '../../components/ui/switch';
 import { uploadFileFromInput } from '../../services/fileApi';
+import { TagsInput, TagsInputLabel, TagsInputList, TagsInputInput, TagsInputItem, TagsInputClear } from '../../components/ui/tags-input';
 
 const defaultNews = {
   title: '',
@@ -19,6 +19,7 @@ const defaultNews = {
   posted_timestamp: '',
   description: '',
   is_hot: false,
+  tags: [],
 };
 
 type NewsFormState = typeof defaultNews & { [key: string]: any };
@@ -39,13 +40,6 @@ const newsFields = [
     required: true,
     colSpan: 1,
   },
-];
-
-const tagOptions = [
-  { id: 0, label: 'Tin Hiệp hội' },
-  { id: 1, label: 'Tin Hội viên' },
-  { id: 2, label: 'Hoạt động' },
-  { id: 3, label: 'Chính sách' },
 ];
 
 function renderField(field: any, value: any, onChange: any, onBlur: any, isInvalid: boolean) {
@@ -80,17 +74,16 @@ const NewsForm: React.FC = () => {
   const { id } = useParams();
   const editorRef = useRef<any>(null);
   const [initialForm, setInitialForm] = useState<NewsFormState>(defaultNews);
-  const [selectedTags, setSelectedTags] = useState<number[]>([]);
-  const [initialTags, setInitialTags] = useState<number[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [initialTags, setInitialTags] = useState<string[]>([]);
 
   useEffect(() => {
     if (id) {
       setLoading(true);
       Promise.all([
         getNewsById(Number(id)),
-        getTagsForNews(Number(id)),
       ])
-        .then(([data, tags]) => {
+        .then(([data]) => {
           // Format timestamp for datetime-local input (convert from Unix seconds)
           const formatForInput = (val: number | string) => {
             if (!val) return '';
@@ -99,17 +92,19 @@ const NewsForm: React.FC = () => {
             const pad = (n: number) => n.toString().padStart(2, '0');
             return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
           };
+          console.log(Array.isArray(data.tags));
           setForm({
             ...data,
             posted_timestamp: formatForInput(data.posted_timestamp),
+            tags: Array.isArray(data.tags) ? data.tags : [],
           });
           setInitialForm({
             ...data,
             posted_timestamp: formatForInput(data.posted_timestamp),
+            tags: Array.isArray(data.tags) ? data.tags : [],
           });
-          const tagIds = Array.isArray(tags) ? tags.map(t => t.id) : [];
-          setSelectedTags(tagIds);
-          setInitialTags(tagIds);
+          setSelectedTags(Array.isArray(data.tags) ? data.tags : []);
+          setInitialTags(Array.isArray(data.tags) ? data.tags : []);
         })
         .catch(() => toast.error('Không thể tải dữ liệu tin tức.'))
         .finally(() => setLoading(false));
@@ -193,17 +188,16 @@ const NewsForm: React.FC = () => {
     const payload = {
       ...form,
       posted_timestamp: toUnixSeconds(form.posted_timestamp),
-      // tag_ids removed from payload
+      tags: selectedTags,
     };
     try {
       if (id) {
         await updateNews(Number(id), payload);
-        await updateNewsTags(Number(id), selectedTags);
         toast.success('Cập nhật tin tức thành công!');
       } else {
         const created = await createNews(payload);
         if (created && created.id) {
-          await updateNewsTags(created.id, selectedTags);
+          // No updateNewsTags call here as tags are now part of the payload
         }
         toast.success('Tạo tin tức thành công!');
       }
@@ -258,27 +252,36 @@ const NewsForm: React.FC = () => {
           </div>
           <div className="flex flex-col gap-8">
             <div>
-              <Label className="mb-1 block">Thẻ tin tức</Label>
-              <div className="flex flex-wrap gap-1">
-                {tagOptions.map(tag => {
-                  const selected = selectedTags.includes(tag.id);
-                  return (
-                    <ShadcnButton
-                      key={tag.id}
-                      type="button"
-                      variant={selected ? 'default' : 'outline'}
-                      className={`cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors border-2 ${selected ? 'bg-primary text-white border-primary' : 'bg-transparent text-primary border-primary/40 hover:bg-primary/10'} shadow-none`}
-                      onClick={() => {
-                        setSelectedTags(prev =>
-                          selected ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
-                        );
-                      }}
+              <TagsInput
+                value={selectedTags}
+                onValueChange={setSelectedTags}
+                className="flex w-full flex-col"
+                editable
+              >
+                <TagsInputLabel className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Thẻ tin tức
+                </TagsInputLabel>
+                <TagsInputList className="flex mt-1 min-h-10 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-3 focus-within:ring-ring/60 disabled:cursor-not-allowed disabled:opacity-50">
+                  {selectedTags.map((tag) => (
+                    <TagsInputItem
+                      key={tag}
+                      value={tag}
+                      className="inline-flex max-w-[calc(100%-8px)] items-center gap-1.5 rounded-md border bg-secondary px-2.5 py-1 text-sm font-medium text-secondary-foreground shadow-sm hover:bg-secondary/80"
                     >
-                      {tag.label}
-                    </ShadcnButton>
-                  );
-                })}
-              </div>
+                      {tag}
+                    </TagsInputItem>
+                  ))}
+                  <TagsInputInput
+                    placeholder="Thêm thẻ..."
+                    className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </TagsInputList>
+                {selectedTags.length > 0 && (
+                  <TagsInputClear className="flex mt-2 h-8 items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-1 text-sm font-medium text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground cursor-pointer">
+                    Xóa tất cả
+                  </TagsInputClear>
+                )}
+              </TagsInput>
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="is_hot" className="font-medium">Nổi bật</Label>
