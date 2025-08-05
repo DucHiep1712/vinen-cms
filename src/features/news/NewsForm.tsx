@@ -92,19 +92,34 @@ const NewsForm: React.FC = () => {
             const pad = (n: number) => n.toString().padStart(2, '0');
             return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
           };
-          console.log(Array.isArray(data.tags));
+          
+          // Parse tags from JSON string if it's a string, otherwise use as is
+          const parseTags = (tags: any) => {
+            if (typeof tags === 'string') {
+              try {
+                return JSON.parse(tags);
+              } catch (error) {
+                console.error('Error parsing tags:', error);
+                return [];
+              }
+            }
+            return Array.isArray(tags) ? tags : [];
+          };
+          
+          const parsedTags = parseTags(data.tags);
+          
           setForm({
             ...data,
             posted_timestamp: formatForInput(data.posted_timestamp),
-            tags: Array.isArray(data.tags) ? data.tags : [],
+            tags: parsedTags,
           });
           setInitialForm({
             ...data,
             posted_timestamp: formatForInput(data.posted_timestamp),
-            tags: Array.isArray(data.tags) ? data.tags : [],
+            tags: parsedTags,
           });
-          setSelectedTags(Array.isArray(data.tags) ? data.tags : []);
-          setInitialTags(Array.isArray(data.tags) ? data.tags : []);
+          setSelectedTags(parsedTags);
+          setInitialTags(parsedTags);
         })
         .catch(() => toast.error('Không thể tải dữ liệu tin tức.'))
         .finally(() => setLoading(false));
@@ -188,7 +203,7 @@ const NewsForm: React.FC = () => {
     const payload = {
       ...form,
       posted_timestamp: toUnixSeconds(form.posted_timestamp),
-      tags: selectedTags,
+      tags: JSON.stringify(selectedTags), // Convert array to JSON string for database storage
     };
     try {
       if (id) {
