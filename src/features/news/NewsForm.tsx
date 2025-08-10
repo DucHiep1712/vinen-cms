@@ -3,15 +3,16 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Label } from '../../components/ui/label';
+import { Switch } from '../../components/ui/switch';
 import { Editor } from '@tinymce/tinymce-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { getNewsById, createNews, updateNews } from '../../services/newsApi';
+import { getNewsTags } from '../../services/tagsApi';
 import { Tooltip, TooltipTrigger, TooltipContent } from '../../components/ui/tooltip';
 import { Copy, ArrowLeft } from 'lucide-react';
 import { isEqual } from 'lodash';
-import { Switch } from '../../components/ui/switch';
 import { uploadFileFromInput } from '../../services/fileApi';
-import { TagsInput, TagsInputLabel, TagsInputList, TagsInputInput, TagsInputItem, TagsInputClear } from '../../components/ui/tags-input';
+import { TagSelector } from '../../components/ui/tag-selector';
 
 const defaultNews = {
   title: '',
@@ -66,18 +67,23 @@ function renderField(field: any, value: any, onChange: any, onBlur: any, isInval
 
 const NewsForm: React.FC = () => {
   const [form, setForm] = useState<NewsFormState>(defaultNews);
+  const [initialForm, setInitialForm] = useState<NewsFormState>(defaultNews);
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
   const [imageError, setImageError] = useState('');
   const [imageUploading, setImageUploading] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [initialTags, setInitialTags] = useState<string[]>([]);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [draftTags, setDraftTags] = useState<string[]>([]); // Draft state for tags
   const navigate = useNavigate();
   const { id } = useParams();
   const editorRef = useRef<any>(null);
-  const [initialForm, setInitialForm] = useState<NewsFormState>(defaultNews);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [initialTags, setInitialTags] = useState<string[]>([]);
 
   useEffect(() => {
+    // Load available tags
+    loadAvailableTags();
+
     if (id) {
       setLoading(true);
       Promise.all([
@@ -92,7 +98,7 @@ const NewsForm: React.FC = () => {
             const pad = (n: number) => n.toString().padStart(2, '0');
             return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
           };
-          
+
           // Parse tags from JSON string if it's a string, otherwise use as is
           const parseTags = (tags: any) => {
             if (typeof tags === 'string') {
@@ -105,9 +111,9 @@ const NewsForm: React.FC = () => {
             }
             return Array.isArray(tags) ? tags : [];
           };
-          
+
           const parsedTags = parseTags(data.tags);
-          
+
           setForm({
             ...data,
             posted_timestamp: formatForInput(data.posted_timestamp),
@@ -120,6 +126,7 @@ const NewsForm: React.FC = () => {
           });
           setSelectedTags(parsedTags);
           setInitialTags(parsedTags);
+          setDraftTags(parsedTags); // Initialize draft tags
         })
         .catch(() => toast.error('Không thể tải dữ liệu tin tức.'))
         .finally(() => setLoading(false));
@@ -127,8 +134,19 @@ const NewsForm: React.FC = () => {
       setInitialForm(defaultNews);
       setSelectedTags([]);
       setInitialTags([]);
+      setDraftTags([]); // Initialize empty draft tags
     }
   }, [id]);
+
+  const loadAvailableTags = async () => {
+    try {
+      const tags = await getNewsTags();
+      setAvailableTags(tags);
+    } catch (error) {
+      console.error('Error loading available tags:', error);
+      setAvailableTags([]);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -147,11 +165,11 @@ const NewsForm: React.FC = () => {
     if (file) {
       setImageUploading(true);
       setImageError('');
-      
+
       // Show local preview immediately
       const url = URL.createObjectURL(file);
       setForm((prev: typeof form) => ({ ...prev, image: url }));
-      
+
       // Upload to AWS S3
       try {
         const cdnUrl = await uploadFileFromInput(file, false);
@@ -170,7 +188,7 @@ const NewsForm: React.FC = () => {
         // Remove the local preview if upload failed
         setForm((prev: typeof form) => ({ ...prev, image: '' }));
       }
-      
+
       setImageUploading(false);
       e.target.value = '';
     } else {
@@ -188,7 +206,7 @@ const NewsForm: React.FC = () => {
     }
   };
 
-  const isFormChanged = !isEqual(form, initialForm) || !isEqual(selectedTags, initialTags);
+  const isFormChanged = !isEqual(form, initialForm) || !isEqual(draftTags, initialTags);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,16 +221,21 @@ const NewsForm: React.FC = () => {
     const payload = {
       ...form,
       posted_timestamp: toUnixSeconds(form.posted_timestamp),
-      tags: JSON.stringify(selectedTags), // Convert array to JSON string for database storage
+      tags: JSON.stringify(draftTags), // Use draft tags instead of selected tags
     };
     try {
       if (id) {
         await updateNews(Number(id), payload);
+        // Apply draft tags to actual tags after successful update
+        setSelectedTags(draftTags);
+        setInitialTags(draftTags);
         toast.success('Cập nhật tin tức thành công!');
       } else {
         const created = await createNews(payload);
         if (created && created.id) {
-          // No updateNewsTags call here as tags are now part of the payload
+          // Apply draft tags to actual tags after successful creation
+          setSelectedTags(draftTags);
+          setInitialTags(draftTags);
         }
         toast.success('Tạo tin tức thành công!');
       }
@@ -267,36 +290,13 @@ const NewsForm: React.FC = () => {
           </div>
           <div className="flex flex-col gap-8">
             <div>
-              <TagsInput
-                value={selectedTags}
-                onValueChange={setSelectedTags}
+              <TagSelector
+                selectedTags={draftTags}
+                onTagsChange={setDraftTags}
+                availableTags={availableTags}
+                placeholder="Thêm thẻ..."
                 className="flex w-full flex-col"
-                editable
-              >
-                <TagsInputLabel className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  Thẻ tin tức
-                </TagsInputLabel>
-                <TagsInputList className="flex mt-1 min-h-10 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-3 focus-within:ring-ring/60 disabled:cursor-not-allowed disabled:opacity-50">
-                  {selectedTags.map((tag) => (
-                    <TagsInputItem
-                      key={tag}
-                      value={tag}
-                      className="inline-flex max-w-[calc(100%-8px)] items-center gap-1.5 rounded-md border bg-secondary px-2.5 py-1 text-sm font-medium text-secondary-foreground shadow-sm hover:bg-secondary/80"
-                    >
-                      {tag}
-                    </TagsInputItem>
-                  ))}
-                  <TagsInputInput
-                    placeholder="Thêm thẻ..."
-                    className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </TagsInputList>
-                {selectedTags.length > 0 && (
-                  <TagsInputClear className="flex mt-2 h-8 items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-1 text-sm font-medium text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground cursor-pointer">
-                    Xóa tất cả
-                  </TagsInputClear>
-                )}
-              </TagsInput>
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="is_hot" className="font-medium">Nổi bật</Label>
@@ -336,8 +336,7 @@ const NewsForm: React.FC = () => {
                   height: 500,
                   menubar: false,
                   plugins: [
-                    'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
-                    'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'advtemplate', 'mentions', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown', 'importword', 'exportword', 'exportpdf'
+                    'image'
                   ],
                   toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
                   content_style:
@@ -437,6 +436,7 @@ const NewsForm: React.FC = () => {
               variant="secondary"
               onClick={() => navigate('/news')}
               disabled={loading}
+              className="cursor-pointer"
             >
               Hủy
             </Button>

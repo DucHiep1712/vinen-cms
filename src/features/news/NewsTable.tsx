@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { PlusIcon, Trash2, Search } from 'lucide-react';
+import { PlusIcon, Trash2, Search, Tags } from 'lucide-react';
 // import RowActionsMenu if needed in the future
 import toast from 'react-hot-toast';
 import { getNews, deleteNews } from '../../services/newsApi';
@@ -155,19 +155,37 @@ const NewsTable: React.FC = () => {
       </Tooltip>
       <div className="w-7xl mx-auto flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold">Tin tức</h1>
-        <div className="relative w-80">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-            <Search className="w-5 h-5" />
-          </span>
-          <Input
-            placeholder="Tìm kiếm tin tức..."
-            value={search}
-            onChange={e => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="pl-10"
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative w-80">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              <Search className="w-5 h-5" />
+            </span>
+            <Input
+              placeholder="Tìm kiếm tin tức..."
+              value={search}
+              onChange={e => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-10"
+            />
+          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/news/tags')}
+                className="flex items-center gap-2 cursor-pointer py-[19px]"
+              >
+                <Tags className="w-4 h-4" />
+                Quản lý thẻ
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Quản lý thẻ tin tức</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
       <div className="flex flex-col items-center gap-4">

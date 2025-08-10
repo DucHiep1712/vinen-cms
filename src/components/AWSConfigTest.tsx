@@ -89,13 +89,13 @@ const AWSConfigTest: React.FC = () => {
       
       <div className="space-y-4">
         <div className="flex gap-2 flex-wrap">
-          <Button onClick={checkEnvVars} variant="outline">
+          <Button onClick={checkEnvVars} variant="outline" className="cursor-pointer">
             Check Env Vars
           </Button>
-          <Button onClick={testConfig} variant="outline">
+          <Button onClick={testConfig} variant="outline" className="cursor-pointer">
             Test Configuration
           </Button>
-          <Button onClick={testUpload} variant="outline">
+          <Button onClick={testUpload} variant="outline" className="cursor-pointer">
             Test Upload
           </Button>
         </div>

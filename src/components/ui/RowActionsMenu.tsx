@@ -52,7 +52,7 @@ export default function RowActionsMenu({ onEdit, onDelete }: RowActionsMenuProps
     <div className="relative flex items-center justify-end">
       <button
         ref={buttonRef}
-        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted-foreground/10 transition-colors"
+        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted-foreground/10 transition-colors cursor-pointer"
         onClick={() => setOpen((v) => !v)}
         aria-label="Hành động"
         tabIndex={0}
@@ -71,7 +71,7 @@ export default function RowActionsMenu({ onEdit, onDelete }: RowActionsMenuProps
           style={{ top: menuPosition.top, left: menuPosition.left }}
         >
           <button
-            className="px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors text-primary"
+            className="px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors text-primary cursor-pointer"
             onClick={() => { setOpen(false); onEdit(); }}
           >
             Sửa
@@ -79,7 +79,7 @@ export default function RowActionsMenu({ onEdit, onDelete }: RowActionsMenuProps
           <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
             <AlertDialogTrigger asChild>
               <button
-                className="px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors text-destructive"
+                className="px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors text-destructive cursor-pointer"
                 onClick={() => { setOpen(false); setConfirmOpen(true); }}
               >
                 Xóa

@@ -127,6 +127,7 @@ const FileUploadExample: React.FC = () => {
             <Button 
               onClick={handleDownloadFromUrl}
               disabled={downloading || !urlInput.trim()}
+              className="cursor-pointer"
             >
               {downloading ? 'Downloading...' : 'Download'}
             </Button>
@@ -158,6 +159,7 @@ const FileUploadExample: React.FC = () => {
             onClick={handleBatchDownload}
             disabled={downloading}
             variant="outline"
+            className="cursor-pointer"
           >
             {downloading ? 'Processing...' : 'Batch Download'}
           </Button>

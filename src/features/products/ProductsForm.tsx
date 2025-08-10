@@ -7,18 +7,19 @@ import { Checkbox } from '../../components/ui/checkbox';
 import { Editor } from '@tinymce/tinymce-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { getProductById, createProduct, updateProduct } from '../../services/productsApi';
+import { getProductTags } from '../../services/tagsApi';
 import { Tooltip, TooltipTrigger, TooltipContent } from '../../components/ui/tooltip';
 import { Copy, ArrowLeft } from 'lucide-react';
 import { isEqual } from 'lodash';
 import { uploadFileFromInput } from '../../services/fileApi';
-import { TagsInput, TagsInputLabel, TagsInputList, TagsInputItem, TagsInputInput, TagsInputClear } from '../../components/ui/tags-input';
+import { TagSelector } from '../../components/ui/tag-selector';
 
 const defaultProduct = {
   title: '',
   image: '',
   price: '',
   description: '',
-  form_fields: '{"name": "false", "phone_number": "false", "address": "false", "org_type": "false", "product_of_interest": "false"}',
+  form_fields: '{"name": "false", "phone_number": "false", "address": "false", "org_type": "false"}',
 };
 
 type ProductFormState = typeof defaultProduct & { [key: string]: any };
@@ -34,10 +35,10 @@ const productFields = [
   },
   {
     name: 'price',
-    label: 'Giá (VNĐ)',
-    type: 'number',
+    label: 'Giá (văn bản)',
+    type: 'text',
     required: true,
-    placeholder: 'Nhập giá sản phẩm hoặc 0 nếu miễn phí',
+    placeholder: 'Nhập văn bản cần hiển trị trong trường giá sản phẩm',
     colSpan: 1,
   },
 ];
@@ -46,8 +47,7 @@ const checkboxOptions = [
   { id: 'name', label: 'Tên' },
   { id: 'phone_number', label: 'Số điện thoại' },
   { id: 'address', label: 'Địa chỉ' },
-  { id: 'org_type', label: 'Loại tổ chức' },
-  { id: 'product_of_interest', label: 'Sản phẩm quan tâm' },
+  { id: 'org_type', label: 'Loại tổ chức' }
 ];
 
 function renderField(field: any, value: any, onChange: any, onBlur: any, isInvalid: boolean) {
@@ -84,22 +84,23 @@ const ProductsForm: React.FC = () => {
     phone_number: false,
     address: false,
     org_type: false,
-    product_of_interest: false,
   });
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [initialTags, setInitialTags] = useState<string[]>([]);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [draftTags, setDraftTags] = useState<string[]>([]); // Draft state for tags
   const navigate = useNavigate();
   const { id } = useParams();
   const editorRef = useRef<any>(null);
 
   useEffect(() => {
+    // Load available tags
+    loadAvailableTags();
+    
     if (id) {
       setLoading(true);
       getProductById(Number(id))
         .then(data => {
-          console.log('Raw tags from DB:', data.tags);
-          console.log('Type of tags:', typeof data.tags);
-          
           // Parse tags from JSON string if it's a string, otherwise use as is
           const parseTags = (tags: any) => {
             if (typeof tags === 'string') {
@@ -114,7 +115,6 @@ const ProductsForm: React.FC = () => {
           };
           
           const parsedTags = parseTags(data.tags);
-          console.log('Parsed tags:', parsedTags);
           
           setForm({ 
             ...data,
@@ -126,9 +126,11 @@ const ProductsForm: React.FC = () => {
           });
           setSelectedTags(parsedTags);
           setInitialTags(parsedTags);
+          setDraftTags(parsedTags); // Initialize draft tags
           
           // Parse form_fields if it exists
           if (data.form_fields) {
+            console.log(typeof data.form_fields, data.form_fields);
             try {
               const parsedFields = JSON.parse(data.form_fields);
               setCheckboxState(parsedFields);
@@ -139,7 +141,6 @@ const ProductsForm: React.FC = () => {
                 phone_number: false,
                 address: false,
                 org_type: false,
-                product_of_interest: false,
               });
             }
           }
@@ -153,10 +154,20 @@ const ProductsForm: React.FC = () => {
         phone_number: false,
         address: false,
         org_type: false,
-        product_of_interest: false,
       });
+      setDraftTags([]); // Initialize empty draft tags
     }
   }, [id]);
+
+  const loadAvailableTags = async () => {
+    try {
+      const tags = await getProductTags();
+      setAvailableTags(tags);
+    } catch (error) {
+      console.error('Error loading available tags:', error);
+      setAvailableTags([]);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -231,7 +242,7 @@ const ProductsForm: React.FC = () => {
     }
   };
 
-  const isFormChanged = !isEqual(form, initialForm) || !isEqual(checkboxState, JSON.parse(form.form_fields || '{"name": "false", "phone_number": "false", "address": "false", "org_type": "false", "product_of_interest": "false"}')) || !isEqual(selectedTags, initialTags);
+  const isFormChanged = !isEqual(form, initialForm) || !isEqual(checkboxState, JSON.parse(form.form_fields || '{"name": "false", "phone_number": "false", "address": "false", "org_type": "false"}')) || !isEqual(draftTags, initialTags);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,15 +260,21 @@ const ProductsForm: React.FC = () => {
       ...form,
       price: form.price === '' ? 0 : Number(form.price),
       form_fields: formFieldsJson,
-      tags: JSON.stringify(selectedTags), // Convert array to JSON string for database storage
+      tags: JSON.stringify(draftTags), // Use draft tags instead of selected tags
     };
     
     try {
       if (id) {
         await updateProduct(Number(id), payload);
+        // Apply draft tags to actual tags after successful update
+        setSelectedTags(draftTags);
+        setInitialTags(draftTags);
         toast.success('Cập nhật sản phẩm thành công!');
       } else {
         await createProduct(payload);
+        // Apply draft tags to actual tags after successful creation
+        setSelectedTags(draftTags);
+        setInitialTags(draftTags);
         toast.success('Tạo sản phẩm thành công!');
       }
       // Do not navigate('/products')
@@ -335,36 +352,12 @@ const ProductsForm: React.FC = () => {
           </div>
           <div className="flex flex-col gap-8">
             <div>
-              <TagsInput
-                value={selectedTags}
-                onValueChange={setSelectedTags}
+              <TagSelector
+                selectedTags={draftTags}
+                onTagsChange={setDraftTags}
+                availableTags={availableTags}
                 className="flex w-full flex-col"
-                editable
-              >
-                <TagsInputLabel className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  Thẻ sản phẩm
-                </TagsInputLabel>
-                <TagsInputList className="flex mt-1 min-h-10 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-3 focus-within:ring-ring/60 disabled:cursor-not-allowed disabled:opacity-50">
-                  {selectedTags.map((tag: string) => (
-                    <TagsInputItem
-                      key={tag}
-                      value={tag}
-                      className="inline-flex max-w-[calc(100%-8px)] items-center gap-1.5 rounded-md border bg-secondary px-2.5 py-1 text-sm font-medium text-secondary-foreground shadow-sm hover:bg-secondary/80"
-                    >
-                      {tag}
-                    </TagsInputItem>
-                  ))}
-                  <TagsInputInput
-                    placeholder="Thêm thẻ..."
-                    className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </TagsInputList>
-                {selectedTags.length > 0 && (
-                  <TagsInputClear className="flex mt-2 h-8 items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-1 text-sm font-medium text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground cursor-pointer">
-                    Xóa tất cả
-                  </TagsInputClear>
-                )}
-              </TagsInput>
+              />
             </div>
           </div>
           <div className="md:col-span-2">
@@ -396,8 +389,7 @@ const ProductsForm: React.FC = () => {
                   height: 500,
                   menubar: false,
                   plugins: [
-                    'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
-                    'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'advtemplate', 'mentions', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown', 'importword', 'exportword', 'exportpdf'
+                    'image'
                   ],
                   toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
                   content_style:
@@ -497,6 +489,7 @@ const ProductsForm: React.FC = () => {
               variant="secondary"
               onClick={() => navigate('/products')}
               disabled={loading}
+              className="cursor-pointer"
             >
               Hủy
             </Button>

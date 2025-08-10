@@ -195,7 +195,7 @@ const Auth: React.FC = () => {
             <Button
               variant="link"
               onClick={switchMode}
-              className="text-sm"
+              className="text-sm cursor-pointer"
             >
               {mode === 'login' 
                 ? 'Chưa có tài khoản? Đăng ký ngay'

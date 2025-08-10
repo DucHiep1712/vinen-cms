@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { PlusIcon, Trash2, Search } from 'lucide-react';
+import { PlusIcon, Trash2, Search, Tags } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getProducts, deleteProduct } from '../../services/productsApi';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -84,7 +84,6 @@ const renderCell = (product: any, key: string) => {
               phone_number: 'SĐT',
               address: 'Địa chỉ',
               org_type: 'Tổ chức',
-              product_of_interest: 'Sản phẩm'
             };
             return fieldLabels[key] || key;
           });
@@ -176,19 +175,37 @@ const ProductsTable: React.FC = () => {
       <div className="w-full flex items-center justify-between mb-2">
         <div className="w-7xl mx-auto flex items-center justify-between">
           <h1 className="text-2xl font-bold">Sản phẩm</h1>
-          <div className="relative w-80">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-              <Search className="w-5 h-5" />
-            </span>
-            <Input
-              placeholder="Tìm kiếm sản phẩm..."
-              value={search}
-              onChange={e => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="pl-10"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative w-80">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                <Search className="w-5 h-5" />
+              </span>
+              <Input
+                placeholder="Tìm kiếm sản phẩm..."
+                value={search}
+                onChange={e => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="pl-10"
+              />
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/products/tags')}
+                  className="flex items-center gap-2 cursor-pointer py-[19px]"
+                >
+                  <Tags className="w-4 h-4" />
+                  Quản lý thẻ
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Quản lý thẻ sản phẩm</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>

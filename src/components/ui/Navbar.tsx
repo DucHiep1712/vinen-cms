@@ -8,6 +8,8 @@ const navItems = [
   { name: 'Sự kiện', path: '/events' },
   { name: 'Tin tức', path: '/news' },
   { name: 'Sản phẩm', path: '/products' },
+  { name: 'Người dùng', path: '/members' },
+  { name: 'Yêu cầu tư vấn', path: '/product-requests' },
 ];
 
 export default function Navbar() {

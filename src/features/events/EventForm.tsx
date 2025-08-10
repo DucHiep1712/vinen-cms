@@ -433,6 +433,7 @@ const EventForm: React.FC = () => {
               variant="secondary"
               onClick={() => navigate('/events')}
               disabled={loading}
+              className="cursor-pointer"
             >
               Hủy
             </Button>

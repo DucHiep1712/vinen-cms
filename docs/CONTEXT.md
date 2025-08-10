@@ -157,6 +157,12 @@ See `docs/VERCEL_DEPLOYMENT.md` for detailed deployment instructions.
 - description: text
 - is_hot: boolean (not null)
 
+### news_tags
+- tags: text (JSON array of tag strings, contains all available news tags)
+
+### product_tags
+- tags: text (JSON array of tag strings, contains all available product tags)
+
 ### news
 - id: bigint (PK, identity)
 - title: text (not null)
@@ -165,7 +171,7 @@ See `docs/VERCEL_DEPLOYMENT.md` for detailed deployment instructions.
 - description: text (not null)
 - view_count: integer (default: 0)
 - is_hot: boolean (default: false)
-- tags: text (JSON array of tag strings)
+- tags: text (JSON array of tag strings, selected from news_tags)
 
 ### products
 - id: bigint (PK, identity)
@@ -174,14 +180,15 @@ See `docs/VERCEL_DEPLOYMENT.md` for detailed deployment instructions.
 - price: double precision
 - description: text (not null)
 - form_fields: text (JSON object for customer form fields)
-- tags: text (JSON array of tag strings)
+- tags: text (JSON array of tag strings, selected from product_tags)
 
 ### status_enum
 - id: integer (PK)
 - label: text (not null)
 
 #### Notes
-- **Tags Storage**: Tags for both news and products are now stored as JSON arrays in the respective `tags` columns, allowing for flexible tag management without requiring separate junction tables.
+- **Centralized Tag Management**: Tags for news and products are now managed through separate `news_tags` and `product_tags` tables, each containing a single row with a JSON array of all available tags.
+- **Tag Selection**: The `tags` columns in `news` and `products` tables now store arrays of tags selected from the respective tag management tables, ensuring consistency and preventing duplicate/invalid tags.
 - **Form Fields**: The products table includes a `form_fields` column to store customer information requirements as a JSON object.
 
 ---
