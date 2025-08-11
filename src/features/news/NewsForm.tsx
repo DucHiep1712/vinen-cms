@@ -76,6 +76,7 @@ const NewsForm: React.FC = () => {
   const [initialTags, setInitialTags] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [draftTags, setDraftTags] = useState<string[]>([]); // Draft state for tags
+  const [localTags, setLocalTags] = useState<string[]>([]); // Local UI state for immediate feedback
   const navigate = useNavigate();
   const { id } = useParams();
   const editorRef = useRef<any>(null);
@@ -127,6 +128,7 @@ const NewsForm: React.FC = () => {
           setSelectedTags(parsedTags);
           setInitialTags(parsedTags);
           setDraftTags(parsedTags); // Initialize draft tags
+          setLocalTags(parsedTags); // Initialize local tags
         })
         .catch(() => toast.error('Không thể tải dữ liệu tin tức.'))
         .finally(() => setLoading(false));
@@ -135,13 +137,14 @@ const NewsForm: React.FC = () => {
       setSelectedTags([]);
       setInitialTags([]);
       setDraftTags([]); // Initialize empty draft tags
+      setLocalTags([]); // Initialize empty local tags
     }
   }, [id]);
 
   const loadAvailableTags = async () => {
     try {
-      const tags = await getNewsTags();
-      setAvailableTags(tags);
+      const tagsData = await getNewsTags();
+      setAvailableTags(tagsData.tags || []);
     } catch (error) {
       console.error('Error loading available tags:', error);
       setAvailableTags([]);
@@ -206,7 +209,7 @@ const NewsForm: React.FC = () => {
     }
   };
 
-  const isFormChanged = !isEqual(form, initialForm) || !isEqual(draftTags, initialTags);
+  const isFormChanged = !isEqual(form, initialForm) || !isEqual(localTags, initialTags);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -221,21 +224,23 @@ const NewsForm: React.FC = () => {
     const payload = {
       ...form,
       posted_timestamp: toUnixSeconds(form.posted_timestamp),
-      tags: JSON.stringify(draftTags), // Use draft tags instead of selected tags
+      tags: JSON.stringify(localTags), // Use local tags for API call
     };
     try {
       if (id) {
         await updateNews(Number(id), payload);
-        // Apply draft tags to actual tags after successful update
-        setSelectedTags(draftTags);
-        setInitialTags(draftTags);
+        // Apply local tags to actual tags after successful update
+        setSelectedTags(localTags);
+        setInitialTags(localTags);
+        setDraftTags(localTags); // Sync draft tags with local tags
         toast.success('Cập nhật tin tức thành công!');
       } else {
         const created = await createNews(payload);
         if (created && created.id) {
-          // Apply draft tags to actual tags after successful creation
-          setSelectedTags(draftTags);
-          setInitialTags(draftTags);
+          // Apply local tags to actual tags after successful creation
+          setSelectedTags(localTags);
+          setInitialTags(localTags);
+          setDraftTags(localTags); // Sync draft tags with local tags
         }
         toast.success('Tạo tin tức thành công!');
       }
@@ -269,7 +274,7 @@ const NewsForm: React.FC = () => {
           )}
           {/* image, is_hot, description fields remain as custom blocks below */}
           <div>
-            <Label htmlFor="image" className="mb-1">Ảnh Banner</Label>
+            <Label htmlFor="image" className="mb-1">Ảnh Banner<span className="text-sm text-gray-500">(Kích thước 16:9 hoặc 16:10)</span></Label>
             <Input
               id="image"
               name="image"
@@ -288,13 +293,17 @@ const NewsForm: React.FC = () => {
               <img src={form.image} alt="Preview" className="mt-2 rounded max-h-40 object-contain border" />
             )}
           </div>
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-8 mt-1">
             <div>
               <TagSelector
-                selectedTags={draftTags}
-                onTagsChange={setDraftTags}
+                selectedTags={localTags}
+                onTagsChange={(newTags) => {
+                  console.log('News local tags changed:', newTags);
+                  setLocalTags(newTags);
+                }}
                 availableTags={availableTags}
-                placeholder="Thêm thẻ..."
+                placeholder="Chọn thẻ..."
+                label="Thẻ tin tức"
                 className="flex w-full flex-col"
               />
             </div>

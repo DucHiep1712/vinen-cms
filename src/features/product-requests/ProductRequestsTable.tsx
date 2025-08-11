@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Trash2, Search, RefreshCw, User, MapPin, Building, Phone, LayoutDashboard } from 'lucide-react';
+import { Trash2, Search, RefreshCw, User, MapPin, Building, Phone, LayoutDashboard, Download } from 'lucide-react';
 import { type ProductRequest, getProductRequests, deleteProductRequest } from '@/services/productRequestsApi';
 import {
   Pagination,
@@ -181,6 +182,55 @@ const ProductRequestsTable: React.FC = () => {
     }
   };
 
+  const exportToExcel = () => {
+    try {
+      // Import xlsx dynamically to avoid SSR issues
+      import('xlsx').then((XLSX) => {
+        // Prepare data for export
+        const exportData = filteredProductRequests.map(request => ({
+          'Tên': request.name || 'N/A',
+          'Tên đăng nhập': request.username || 'N/A',
+          'Số điện thoại': request.phone_number || 'N/A',
+          'Thành phố': request.city || 'N/A',
+          'Quận/Huyện': request.district || 'N/A',
+          'Địa chỉ cụ thể': request.specific_address || 'N/A',
+          'Loại tổ chức': request.org_type || 'N/A'
+        }));
+
+        // Create workbook and worksheet
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(exportData);
+
+        // Set column widths
+        const colWidths = [
+          { wch: 25 }, // Tên
+          { wch: 25 }, // Tên đăng nhập
+          { wch: 15 }, // Số điện thoại
+          { wch: 20 }, // Thành phố
+          { wch: 20 }, // Quận/Huyện
+          { wch: 30 }, // Địa chỉ cụ thể
+          { wch: 20 }  // Loại tổ chức
+        ];
+        ws['!cols'] = colWidths;
+
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(wb, ws, 'Yêu cầu tư vấn sản phẩm');
+
+        // Generate filename with current date
+        const date = new Date().toISOString().split('T')[0];
+        const filename = `yeu_cau_tu_van_san_pham_${date}.xlsx`;
+
+        // Save file
+        XLSX.writeFile(wb, filename);
+        
+        toast.success(`Xuất Excel thành công! ${filteredProductRequests.length} bản ghi đã được xuất.`);
+      });
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      toast.error('Có lỗi khi xuất Excel');
+    }
+  };
+
   // Render cell content - Updated to match other tables
   const renderCell = (item: ProductRequest, key: string) => {
     const value = item[key as keyof ProductRequest];
@@ -230,6 +280,18 @@ const ProductRequestsTable: React.FC = () => {
       <div className="w-full max-w-7xl mx-auto flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold">Yêu cầu sản phẩm</h1>
         <div className="flex items-center gap-2">
+          {/* Export to Excel Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={exportToExcel}
+            className="flex items-center gap-2 px-3 py-1 h-8 cursor-pointer"
+            title="Xuất danh sách ra file Excel"
+          >
+            <Download className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm">Xuất Excel</span>
+          </Button>
+
           <div className="relative w-80">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
               <Search className="w-5 h-5" />
@@ -420,7 +482,7 @@ const ProductRequestsTable: React.FC = () => {
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Loại tổ chức</p>
+                      <p>Loại hình doanh nghiệp</p>
                     </TooltipContent>
                   </Tooltip>
                   <Tooltip>

@@ -89,6 +89,7 @@ const ProductsForm: React.FC = () => {
   const [initialTags, setInitialTags] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [draftTags, setDraftTags] = useState<string[]>([]); // Draft state for tags
+  const [localTags, setLocalTags] = useState<string[]>([]); // Local UI state for immediate feedback
   const navigate = useNavigate();
   const { id } = useParams();
   const editorRef = useRef<any>(null);
@@ -127,6 +128,7 @@ const ProductsForm: React.FC = () => {
           setSelectedTags(parsedTags);
           setInitialTags(parsedTags);
           setDraftTags(parsedTags); // Initialize draft tags
+          setLocalTags(parsedTags); // Initialize local tags
           
           // Parse form_fields if it exists
           if (data.form_fields) {
@@ -156,13 +158,14 @@ const ProductsForm: React.FC = () => {
         org_type: false,
       });
       setDraftTags([]); // Initialize empty draft tags
+      setLocalTags([]); // Initialize empty local tags
     }
   }, [id]);
 
   const loadAvailableTags = async () => {
     try {
-      const tags = await getProductTags();
-      setAvailableTags(tags);
+      const tagsData = await getProductTags();
+      setAvailableTags(tagsData.tags || []);
     } catch (error) {
       console.error('Error loading available tags:', error);
       setAvailableTags([]);
@@ -242,12 +245,12 @@ const ProductsForm: React.FC = () => {
     }
   };
 
-  const isFormChanged = !isEqual(form, initialForm) || !isEqual(checkboxState, JSON.parse(form.form_fields || '{"name": "false", "phone_number": "false", "address": "false", "org_type": "false"}')) || !isEqual(draftTags, initialTags);
+  const isFormChanged = !isEqual(form, initialForm) || !isEqual(checkboxState, JSON.parse(form.form_fields || '{"name": "false", "phone_number": "false", "address": "false", "org_type": "false"}')) || !isEqual(localTags, initialTags);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Validate required fields
-    if (!form.title || form.price === '' || !form.description) {
+    if (!form.title || !form.price || !form.description) {
       toast.error('Vui lòng điền đầy đủ tất cả các trường bắt buộc.');
       return;
     }
@@ -258,23 +261,25 @@ const ProductsForm: React.FC = () => {
     
     const payload = {
       ...form,
-      price: form.price === '' ? 0 : Number(form.price),
+      price: form.price,
       form_fields: formFieldsJson,
-      tags: JSON.stringify(draftTags), // Use draft tags instead of selected tags
+      tags: JSON.stringify(localTags), // Use local tags for API call
     };
     
     try {
       if (id) {
         await updateProduct(Number(id), payload);
-        // Apply draft tags to actual tags after successful update
-        setSelectedTags(draftTags);
-        setInitialTags(draftTags);
+        // Apply local tags to actual tags after successful update
+        setSelectedTags(localTags);
+        setInitialTags(localTags);
+        setDraftTags(localTags); // Sync draft tags with local tags
         toast.success('Cập nhật sản phẩm thành công!');
       } else {
         await createProduct(payload);
-        // Apply draft tags to actual tags after successful creation
-        setSelectedTags(draftTags);
-        setInitialTags(draftTags);
+        // Apply local tags to actual tags after successful creation
+        setSelectedTags(localTags);
+        setInitialTags(localTags);
+        setDraftTags(localTags); // Sync draft tags with local tags
         toast.success('Tạo sản phẩm thành công!');
       }
       // Do not navigate('/products')
@@ -331,7 +336,7 @@ const ProductsForm: React.FC = () => {
 
           {/* image and description fields remain as custom blocks below */}
           <div>
-            <Label htmlFor="image" className="mb-1">Ảnh sản phẩm</Label>
+            <Label htmlFor="image" className="mb-1">Ảnh sản phẩm<span className="text-sm text-gray-500">(Kích thước 16:9 hoặc 16:10)</span></Label>
             <Input
               id="image"
               name="image"
@@ -350,12 +355,17 @@ const ProductsForm: React.FC = () => {
               <img src={form.image} alt="Preview" className="mt-2 rounded max-h-40 object-contain border" />
             )}
           </div>
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-8 mt-1">
             <div>
               <TagSelector
-                selectedTags={draftTags}
-                onTagsChange={setDraftTags}
+                selectedTags={localTags}
+                onTagsChange={(newTags) => {
+                  console.log('Product local tags changed:', newTags);
+                  setLocalTags(newTags);
+                }}
                 availableTags={availableTags}
+                placeholder="Chọn thẻ..."
+                label="Thẻ sản phẩm"
                 className="flex w-full flex-col"
               />
             </div>

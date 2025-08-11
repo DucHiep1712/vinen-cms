@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { PlusIcon, Search, User, MapPin, Calendar, Building, Phone, RefreshCw, Handshake } from 'lucide-react';
+import { PlusIcon, Search, User, MapPin, Calendar, Building, Phone, RefreshCw, Handshake, Filter, ChevronDown, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getMembers } from '../../services/membersApi';
 import type { Member } from '../../services/membersApi';
@@ -22,6 +22,7 @@ import {
   PaginationEllipsis,
 } from '@/components/ui/pagination';
 import { Input } from '@/components/ui/input';
+
 
 const commonHeaderClass = 'bg-muted/60 text-muted-foreground/60 uppercase text-xs border border-muted-foreground/60 py-3 font-medium';
 
@@ -186,6 +187,8 @@ const MembersTable: React.FC = () => {
   const [showMemberDialog, setShowMemberDialog] = useState(false);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [memberFilter, setMemberFilter] = useState<'all' | 'members' | 'non-members'>('all');
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const itemsPerPage = 6;
 
@@ -195,10 +198,25 @@ const MembersTable: React.FC = () => {
     fetchMembers();
   }, []);
 
-  // Reset to first page when search changes
+  // Reset to first page when search or filter changes
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, memberFilter]);
+
+  // Close filter dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.filter-dropdown')) {
+        setFilterDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const fetchMembers = useCallback(async () => {
     try {
@@ -234,27 +252,97 @@ const MembersTable: React.FC = () => {
     }
   };
 
+  const exportToExcel = () => {
+    try {
+      // Import xlsx dynamically to avoid SSR issues
+      import('xlsx').then((XLSX) => {
+        // Prepare data for export
+        const exportData = filteredMembers.map(member => ({
+          'ID': member.id,
+          'Tên đăng nhập': member.username || 'N/A',
+          'Số điện thoại': member.phone_number || 'N/A',
+          'Tổ chức': member.org || 'N/A',
+          'Chức vụ': member.title || 'N/A',
+          'Địa chỉ': member.org_location || 'N/A',
+          'Ngày sinh': member.dob ? new Date(member.dob).toLocaleDateString('vi-VN') : 'N/A',
+          'Người giới thiệu': member.referrer_info || 'N/A',
+          'Trạng thái': member.is_member ? 'Thành viên' : 'Không phải thành viên'
+        }));
+
+        // Create workbook and worksheet
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(exportData);
+
+        // Set column widths
+        const colWidths = [
+          { wch: 20 }, // ID
+          { wch: 25 }, // Tên đăng nhập
+          { wch: 15 }, // Số điện thoại
+          { wch: 30 }, // Tổ chức
+          { wch: 20 }, // Chức vụ
+          { wch: 25 }, // Địa chỉ
+          { wch: 15 }, // Ngày sinh
+          { wch: 20 }, // Người giới thiệu
+          { wch: 20 }  // Trạng thái
+        ];
+        ws['!cols'] = colWidths;
+
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(wb, ws, 'Danh sách người dùng');
+
+        // Generate filename with current date
+        const date = new Date().toISOString().split('T')[0];
+        const filename = `danh_sach_nguoi_dung_${date}.xlsx`;
+
+        // Save file
+        XLSX.writeFile(wb, filename);
+
+        toast.success(`Xuất Excel thành công! ${filteredMembers.length} bản ghi đã được xuất.`);
+      });
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      toast.error('Có lỗi khi xuất Excel');
+    }
+  };
+
   const filteredMembers = useMemo(() => {
-    if (!debouncedSearch) return membersList;
+    let filtered = membersList;
 
-    return membersList.filter(member => {
-      const searchTerm = debouncedSearch.toLowerCase();
+    // Apply member status filter
+    if (memberFilter !== 'all') {
+      filtered = filtered.filter(member => {
+        if (memberFilter === 'members') {
+          return member.is_member === true;
+        } else if (memberFilter === 'non-members') {
+          return member.is_member === false;
+        }
+        return true;
+      });
+    }
 
-      // Search in multiple fields
-      const fields = [
-        member.id || '',
-        member.username || '',
-        member.phone_number || '',
-        member.org || '',
-        member.title || '',
-        member.org_location || ''
-      ];
+    // Apply search filter
+    if (debouncedSearch) {
+      filtered = filtered.filter(member => {
+        const searchTerm = debouncedSearch.toLowerCase();
 
-      return fields.some(field =>
-        field.toLowerCase().includes(searchTerm)
-      );
-    });
-  }, [membersList, debouncedSearch]);
+        // Search in multiple fields
+        const fields = [
+          member.id || '',
+          member.username || '',
+          member.phone_number || '',
+          member.org || '',
+          member.title || '',
+          member.org_location || ''
+        ];
+
+        return fields.some(field =>
+          field.toLowerCase().includes(searchTerm)
+        );
+      });
+    }
+
+    return filtered;
+  }, [membersList, debouncedSearch, memberFilter]);
 
   const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
   const startIndex = (page - 1) * itemsPerPage;
@@ -304,7 +392,85 @@ const MembersTable: React.FC = () => {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-4">
+            {/* Export to Excel Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={exportToExcel}
+              className="flex items-center gap-2 px-3 py-1 h-8 cursor-pointer"
+              title="Xuất danh sách ra file Excel"
+            >
+              <Download className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm">Xuất Excel</span>
+            </Button>
+            {/* Member Status Filter Dropdown */}
+            <div className="relative filter-dropdown">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
+                className="flex items-center gap-2 px-3 py-1 h-8 cursor-pointer"
+              >
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm">
+                  {memberFilter === 'all' && 'Tất cả'}
+                  {memberFilter === 'members' && 'Thành viên'}
+                  {memberFilter === 'non-members' && 'Không phải thành viên'}
+                </span>
+                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${filterDropdownOpen ? 'rotate-180' : ''}`} />
+              </Button>
+
+              {filterDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white border-2 border-gray-300 rounded-lg shadow-xl z-50">
+                  <div className="py-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMemberFilter('all');
+                        setFilterDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors ${memberFilter === 'all'
+                        ? 'bg-blue-100 text-blue-800 border-l-4 border-l-blue-500'
+                        : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                    >
+                      Tất cả
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMemberFilter('members');
+                        setFilterDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors ${memberFilter === 'members'
+                        ? 'bg-blue-100 text-blue-800 border-l-4 border-l-blue-500'
+                        : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                    >
+                      Thành viên
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMemberFilter('non-members');
+                        setFilterDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors ${memberFilter === 'non-members'
+                        ? 'bg-blue-100 text-blue-800 border-l-4 border-l-blue-500'
+                        : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                    >
+                      Không phải thành viên
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+
+            {/* Search Bar */}
             <div className="relative w-80">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                 <Search className="w-5 h-5" />
@@ -328,11 +494,6 @@ const MembersTable: React.FC = () => {
                 </Button>
               )}
             </div>
-            {debouncedSearch && (
-              <div className="text-sm text-muted-foreground">
-                {filteredMembers.length} kết quả
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -353,18 +514,36 @@ const MembersTable: React.FC = () => {
               {paginatedMembers.length === 0 ? (
                 <tr>
                   <td colSpan={memberHeaders.length} className="text-center py-8 text-muted-foreground">
-                    {debouncedSearch ? (
+                    {(debouncedSearch || memberFilter !== 'all') ? (
                       <div>
                         <div className="text-lg font-medium mb-2">Không tìm thấy kết quả</div>
-                        <div className="text-sm mb-3">Từ khóa: "{debouncedSearch}"</div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSearch('')}
-                          className="mt-3 cursor-pointer"
-                        >
-                          Xóa tìm kiếm
-                        </Button>
+                        <div className="text-sm mb-3">
+                          {debouncedSearch && `Từ khóa: "${debouncedSearch}"`}
+                          {debouncedSearch && memberFilter !== 'all' && ' | '}
+                          {memberFilter !== 'all' && `Lọc: ${memberFilter === 'members' ? 'Thành viên' : 'Không phải thành viên'}`}
+                        </div>
+                        <div className="flex gap-2 justify-center">
+                          {debouncedSearch && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSearch('')}
+                              className="cursor-pointer"
+                            >
+                              Xóa tìm kiếm
+                            </Button>
+                          )}
+                          {memberFilter !== 'all' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setMemberFilter('all')}
+                              className="cursor-pointer"
+                            >
+                              Xóa bộ lọc
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <div>
@@ -460,7 +639,7 @@ const MembersTable: React.FC = () => {
 
           {filteredMembers.length === 0 && (
             <p className="text-center text-muted-foreground py-4">
-              Không tìm thấy thành viên nào phù hợp với tìm kiếm.
+              Không tìm thấy thành viên nào phù hợp với tìm kiếm và bộ lọc.
             </p>
           )}
         </div>

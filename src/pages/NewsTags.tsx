@@ -5,10 +5,10 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
-import { getNewsTags, updateNewsTags } from '../services/tagsApi';
+import { getNewsTags, updateNewsTags, type Tags } from '../services/tagsApi';
 
 const NewsTags: React.FC = () => {
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<Tags>({id: 1, tags: []});
   const [newTag, setNewTag] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -36,17 +36,17 @@ const NewsTags: React.FC = () => {
       return;
     }
     
-    if (tags.includes(newTag.trim())) {
+    if (tags.tags.includes(newTag.trim())) {
       toast.error('Thẻ này đã tồn tại.');
       return;
     }
     
-    setTags([...tags, newTag.trim()]);
+    setTags({...tags, tags: [...tags.tags, newTag.trim()]});
     setNewTag('');
   };
 
   const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+    setTags({...tags, tags: tags.tags.filter(tag => tag !== tagToRemove)});
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -59,7 +59,7 @@ const NewsTags: React.FC = () => {
   const saveTags = async () => {
     setSaving(true);
     try {
-      await updateNewsTags(tags);
+      await updateNewsTags({id: tags.id, tags: tags.tags});
       toast.success('Đã lưu thẻ thành công!');
     } catch (error) {
       toast.error('Không thể lưu thẻ.');
@@ -116,13 +116,13 @@ const NewsTags: React.FC = () => {
 
           <div className="mb-6">
             <Label className="text-sm font-medium mb-2 block">
-              Danh sách thẻ ({tags.length})
+              Danh sách thẻ ({tags.tags.length})
             </Label>
-            {tags.length === 0 ? (
+            {tags.tags.length === 0 ? (
               <p className="text-muted-foreground">Chưa có thẻ nào.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {tags.map((tag) => (
+                {tags.tags.map((tag) => (
                   <div
                     key={tag}
                     className="flex items-center gap-2 bg-secondary text-secondary-foreground px-3 py-1 rounded-md"

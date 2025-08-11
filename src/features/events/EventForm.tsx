@@ -276,7 +276,7 @@ const EventForm: React.FC = () => {
           )}
           {/* image, is_hot, description fields remain as custom blocks below */}
           <div>
-            <Label htmlFor="image" className="mb-1">Ảnh Banner (16:9 hoặc 16:10)</Label>
+            <Label htmlFor="image" className="mb-1">Ảnh Banner<span className="text-sm text-gray-500">(Kích thước 16:9 hoặc 16:10)</span></Label>
             <Input
               id="image"
               name="image"
@@ -332,8 +332,7 @@ const EventForm: React.FC = () => {
                 height: 500,
                 menubar: false,
                 plugins: [
-                  'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
-                  'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'advtemplate', 'mentions', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown', 'importword', 'exportword', 'exportpdf'
+                  'image'
                 ],
                 toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
                 content_style:
