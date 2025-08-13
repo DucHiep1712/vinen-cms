@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Auth from './pages/Auth';
 import EventsTable from './features/events/EventsTable';
 import EventForm from './features/events/EventForm';
@@ -16,6 +16,30 @@ import ProductTags from './pages/ProductTags';
 import MembersIndexPage from './pages/members/index';
 import ProductRequestsIndexPage from './pages/product-requests/index';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useEffect } from 'react';
+
+// Navigation guard component
+function NavigationGuard() {
+  const { isAuthenticated, sessionTimeRemaining, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Check session validity on every navigation
+    if (isAuthenticated) {
+      // Import and check actual session validity from localStorage
+      import('./services/authApi').then(({ isLoggedIn }) => {
+        if (!isLoggedIn()) {
+          console.log('Session invalid during navigation, logging out...');
+          logout();
+          navigate('/auth', { replace: true });
+        }
+      });
+    }
+  }, [location.pathname, isAuthenticated, logout, navigate]);
+
+  return null;
+}
 
 function AppRoutes() {
   const location = useLocation();
@@ -23,10 +47,31 @@ function AppRoutes() {
 
   // Protected Route Component (moved inside AppRoutes to access AuthProvider)
   function ProtectedRoute({ children }: { children: React.ReactNode }) {
-    const { isAuthenticated, isLoading } = useAuth();
+    const { isAuthenticated, isLoading, sessionTimeRemaining, logout } = useAuth();
+    const navigate = useNavigate();
+    
+    // Check actual session validity on every render
+    useEffect(() => {
+      if (!isLoading && isAuthenticated) {
+        import('./services/authApi').then(({ isLoggedIn }) => {
+          if (!isLoggedIn()) {
+            console.log('Session invalid in ProtectedRoute, logging out...');
+            logout();
+            navigate('/auth', { replace: true });
+          }
+        });
+      }
+    }, [isLoading, isAuthenticated, logout, navigate]);
     
     if (isLoading) {
       return <div className="flex items-center justify-center min-h-screen">Đang tải...</div>;
+    }
+    
+    // Check if session has expired or is invalid
+    // Note: sessionTimeRemaining can be null initially when user first logs in
+    if (sessionTimeRemaining !== null && sessionTimeRemaining <= 0) {
+      // Session expired, redirect to login
+      return <Navigate to="/auth" replace />;
     }
     
     if (!isAuthenticated) {
@@ -37,6 +82,9 @@ function AppRoutes() {
   }
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Navigation guard to check session on every route change */}
+      <NavigationGuard />
+      
       {!hideNavbar && <Navbar />}
       <main className="flex-1">
         <Routes>

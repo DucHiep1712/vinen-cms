@@ -37,9 +37,23 @@ const Auth: React.FC = () => {
     setLoading(false);
 
     if (success) {
-      const user = { username, loggedInAt: new Date().toISOString() };
-      setUser(user);
-      navigate('/events');
+      // Get the actual session data from localStorage that was created by loginUser
+      const sessionData = localStorage.getItem('auth_session');
+      if (sessionData) {
+        try {
+          const user = JSON.parse(sessionData);
+          console.log('Setting user from session data:', user);
+          setUser(user);
+          // Navigate after setting the user
+          navigate('/events');
+        } catch (error) {
+          console.error('Error parsing session data:', error);
+          toast.error('Có lỗi xảy ra khi xử lý phiên đăng nhập.');
+        }
+      } else {
+        console.error('No session data found after login');
+        toast.error('Có lỗi xảy ra khi tạo phiên đăng nhập.');
+      }
     }
   };
 
@@ -191,10 +205,10 @@ const Auth: React.FC = () => {
             </Button>
           </form>
 
-          {/* <div className="text-center">
+          <div className="text-center">
             <Button
               variant="link"
-              onClick={switchMode}
+              onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
               className="text-sm cursor-pointer"
             >
               {mode === 'login' 
@@ -202,7 +216,7 @@ const Auth: React.FC = () => {
                 : 'Đã có tài khoản? Đăng nhập'
               }
             </Button>
-          </div> */}
+          </div>
         </CardContent>
       </Card>
     </div>
