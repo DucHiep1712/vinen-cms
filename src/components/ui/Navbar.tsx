@@ -2,7 +2,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import logo from '../../assets/logo.jpg';
 import { Button } from './button';
-import { SessionTimeout } from '../SessionTimeout';
 
 const navItems = [
   // { name: 'Dashboard', path: '/dashboard' },
@@ -40,11 +39,6 @@ export default function Navbar() {
         ))}
       </div>
       <div className="flex items-center gap-4 mr-6">
-        {/* Session Timeout Display */}
-        <div className="hidden md:block">
-          <SessionTimeout />
-        </div>
-        
         <Button
           variant="ghost"
           onClick={handleLogout}

@@ -205,18 +205,6 @@ const Auth: React.FC = () => {
             </Button>
           </form>
 
-          <div className="text-center">
-            <Button
-              variant="link"
-              onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-              className="text-sm cursor-pointer"
-            >
-              {mode === 'login' 
-                ? 'Chưa có tài khoản? Đăng ký ngay'
-                : 'Đã có tài khoản? Đăng nhập'
-              }
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>
